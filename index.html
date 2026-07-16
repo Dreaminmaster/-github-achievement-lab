@@ -2,44 +2,81 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#071516">
-  <meta name="description" content="A mobile-first interactive 3D spatial homage to Edward Hopper's Nighthawks.">
-  <title>夜游者 · Nighthawks — 3D Spatial Study</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071416">
+  <meta name="description" content="把经典名画重新搭建成可以进入、移动和观察的互动三维空间。">
+  <title>名画空间 · Painted Worlds</title>
   <link rel="stylesheet" href="./styles.css">
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/"
-      }
-    }
-  </script>
 </head>
 <body>
-  <noscript><div class="noscript">这个互动场景需要启用 JavaScript。</div></noscript>
-  <main id="app" aria-label="霍普《夜游者》的可交互三维空间研究">
-    <div id="scene"></div>
-    <div id="vignette"></div>
-    <div id="grain"></div>
-    <header class="brand" aria-hidden="true">
-      <h1>夜游者</h1>
-      <p>Nighthawks · spatial study</p>
-    </header>
-    <nav class="toolbar" aria-label="场景控制">
-      <button id="composition" class="primary" aria-label="回到画作构图">构图</button>
-      <button id="explore" aria-pressed="false" aria-label="切换缓慢环绕">环绕</button>
-      <button id="light" aria-pressed="true" aria-label="切换餐厅灯光">灯光</button>
-      <button id="reset" aria-label="重置视角">复位</button>
-    </nav>
-    <div id="hint" class="hint">单指旋转 · 双指缩放与移动 · 双击回到构图</div>
-    <div id="loading" class="loading" role="status" aria-live="polite">
-      <div class="loading-inner">
-        <div class="loading-title">NIGHTHAWKS</div>
-        <div class="loading-line"></div>
+  <div class="page-noise" aria-hidden="true"></div>
+  <div class="page-glow page-glow-a" aria-hidden="true"></div>
+  <div class="page-glow page-glow-b" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="site-name" href="./" aria-label="名画空间首页">
+      <span>名画空间</span>
+      <small>Painted Worlds</small>
+    </a>
+    <a class="repository-link" href="https://github.com/Dreaminmaster/-github-achievement-lab" target="_blank" rel="noreferrer">
+      GitHub <span aria-hidden="true">↗</span>
+    </a>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <h1 id="page-title">走进<br>一幅画。</h1>
+        <p id="site-description">把平面名画重新搭建成可进入、可观察、可移动的三维空间。</p>
       </div>
-    </div>
+      <div class="collection-count" aria-label="当前已开放场景数量">
+        <span id="scene-count">01</span>
+        <small>开放场景</small>
+      </div>
+    </section>
+
+    <section class="collection" aria-labelledby="collection-title">
+      <div class="section-heading">
+        <h2 id="collection-title">场景目录</h2>
+        <p>手机端优先 · 可旋转 · 可缩放 · 可移动</p>
+      </div>
+
+      <div id="scene-grid" class="scene-grid">
+        <a class="scene-card" href="./scenes/nighthawks/" style="--scene-dark:#071416;--scene-light:#e8dfb4;--scene-accent:#9f2d2b;--scene-secondary:#1b6d59">
+          <div class="scene-visual">
+            <div class="nighthawks-mini" aria-hidden="true">
+              <span class="mini-building"></span>
+              <span class="mini-window"></span>
+              <span class="mini-counter"></span>
+              <span class="mini-person mini-person-a"></span>
+              <span class="mini-person mini-person-b"></span>
+              <span class="mini-person mini-person-c"></span>
+              <span class="mini-street"></span>
+            </div>
+            <span class="scene-index">01</span>
+            <span class="enter-mark" aria-hidden="true">↗</span>
+          </div>
+          <div class="scene-copy">
+            <div class="scene-heading">
+              <div>
+                <h2>夜游者</h2>
+                <p class="english-title">Nighthawks</p>
+              </div>
+              <p class="artist">爱德华·霍普<br><span>Edward Hopper · 1942</span></p>
+            </div>
+            <p class="scene-description">走进深夜街角的玻璃餐厅，在冷清街道与温暖灯光之间观察霍普最著名的都市夜景。</p>
+            <p class="scene-features">完整三维场景 · 手机触控 · 自由缩放移动</p>
+          </div>
+        </a>
+      </div>
+    </section>
   </main>
-  <script type="module" src="./src/app.js"></script>
+
+  <footer>
+    <p>本项目持续增加新的名画空间还原。</p>
+    <p>Dreaminmaster · 2026</p>
+  </footer>
+
+  <script type="module" src="./gallery.js"></script>
 </body>
 </html>
