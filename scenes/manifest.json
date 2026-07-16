@@ -12,9 +12,22 @@
       "year": 1942,
       "path": "scenes/nighthawks/",
       "status": "available",
-      "description": "走进深夜街角的玻璃餐厅，在冷清街道与温暖灯光之间观察霍普最著名的都市夜景。",
-      "features": ["完整三维场景", "手机触控", "自由缩放移动", "画作构图复位"],
-      "palette": ["#071416", "#e8dfb4", "#9f2d2b", "#1b6d59"]
+      "description": "从原画的街角关系出发，重建弧形玻璃餐厅、交叉街道、对街暗楼、室内长柜台与四个人物，并向画外延伸寂静城市。",
+      "features": ["重构街角关系", "持久双指缩放", "完整室内细节", "画外城市延伸"],
+      "palette": ["#061214", "#ece2ae", "#a32d2c", "#1e6554"]
+    },
+    {
+      "id": "rooms-by-the-sea",
+      "titleZh": "海边的房间",
+      "titleEn": "Rooms by the Sea",
+      "artistZh": "爱德华·霍普",
+      "artistEn": "Edward Hopper",
+      "year": 1951,
+      "path": "scenes/rooms-by-the-sea/",
+      "status": "available",
+      "description": "进入直面海水的明亮房间，在不合现实的门槛、锐利日照与相邻起居室之间探索霍普安静而超现实的空间。",
+      "features": ["海面动态延伸", "锐利几何日光", "相邻房间补全", "手机自由漫游"],
+      "palette": ["#6aa4b5", "#f0e6c7", "#8f3d30", "#c6b46f"]
     }
   ]
 }
