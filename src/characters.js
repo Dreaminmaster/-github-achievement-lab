@@ -1,108 +1,99 @@
-const { THREE, diner, mats, box, cylinder, sphere, limbBetween, canvasTexture, signPlane } = window.NH;
+const { THREE, diner, mats, box, cylinder, sphere, limbBetween } = window.NH;
 
-function createHat(parent, colorMaterial, position = [0, 0, 0], scale = 1) {
+function createHat(parent, material, position = [0, 0, 0], scale = 1, tilt = 0) {
   const hat = new THREE.Group();
   hat.position.set(...position);
+  hat.rotation.z = tilt;
   parent.add(hat);
-  cylinder(hat, .34 * scale, .34 * scale, .035 * scale, [0, 0, 0], colorMaterial, [0, 0, 0], 28);
-  cylinder(hat, .22 * scale, .25 * scale, .18 * scale, [0, .095 * scale, 0], colorMaterial, [0, 0, 0], 20);
-  box(hat, [.45 * scale, .042 * scale, .025 * scale], [0, .055 * scale, .23 * scale], mats.cream, [0, 0, 0], false, false);
+  cylinder(hat, .34 * scale, .34 * scale, .035 * scale, [0, 0, 0], material, [0, 0, 0], 28);
+  cylinder(hat, .21 * scale, .25 * scale, .18 * scale, [0, .095 * scale, 0], material, [0, 0, 0], 20);
+  box(hat, [.44 * scale, .038 * scale, .026 * scale], [0, .055 * scale, .225 * scale], mats.cream, [0, 0, 0], false, false);
   return hat;
 }
 
-function createFace(parent, options = {}) {
+function facialDetails(parent, y, skin, options = {}) {
+  if (options.backView) return;
   const face = new THREE.Group();
+  face.position.y = y;
+  face.rotation.y = options.yaw ?? 0;
   parent.add(face);
-  const skin = options.skin ?? mats.skin;
-  const head = sphere(face, .25, [0, 0, 0], skin, [.88, 1.08, .92], 24);
-  head.rotation.y = options.faceYaw ?? 0;
-  if (!options.backView) {
-    sphere(face, .025, [-.082, .035, .224], mats.shadow, [1, .5, .5], 10);
-    sphere(face, .025, [.082, .035, .224], mats.shadow, [1, .5, .5], 10);
-    const nose = new THREE.Mesh(new THREE.ConeGeometry(.038, .12, 8), skin);
-    nose.position.set(0, -.005, .26);
-    nose.rotation.x = Math.PI / 2;
-    face.add(nose);
-    box(face, [.11, .018, .015], [0, -.105, .234], options.lipMaterial ?? mats.woodLight, [0, 0, 0], false, false);
-  }
-  return face;
+  sphere(face, .023, [-.078, .04, .228], mats.shadow, [1, .5, .5], 10);
+  sphere(face, .023, [.078, .04, .228], mats.shadow, [1, .5, .5], 10);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(.035, .105, 8), skin);
+  nose.position.set(0, -.012, .257);
+  nose.rotation.x = Math.PI / 2;
+  face.add(nose);
+  box(face, [.105, .017, .014], [0, -.115, .236], options.lips ?? mats.wood, [0, 0, 0], false, false);
 }
 
-function createSeatedMan(options) {
+function seatedMan(options) {
   const person = new THREE.Group();
   person.position.set(...options.position);
   person.rotation.y = options.rotationY ?? 0;
+  person.scale.setScalar(options.scale ?? 1);
   diner.add(person);
-
-  cylinder(person, .25, .31, .88, [0, 1.83, 0], options.jacket ?? mats.suit, [0, 0, options.lean ?? 0], 14);
-  box(person, [.52, .08, .58], [0, 1.35, 0], options.jacket ?? mats.suit, [0, 0, 0], true, true);
-  sphere(person, .25, [0, 2.4, .01], options.skin ?? mats.skin, [.88, 1.08, .92], 24);
-  if (!options.backView) {
-    sphere(person, .024, [-.08, 2.44, .23], mats.shadow, [1, .5, .5], 10);
-    sphere(person, .024, [.08, 2.44, .23], mats.shadow, [1, .5, .5], 10);
-    box(person, [.11, .016, .014], [0, 2.3, .238], mats.wood, [0, 0, 0], false, false);
-  }
-  createHat(person, options.hat ?? mats.suit, [0, 2.68, 0], .92);
-  limbBetween(person, [-.23, 2.0, .05], [-.26, 1.62, .38], .09, options.jacket ?? mats.suit);
-  limbBetween(person, [.23, 2.0, .05], [.3, 1.62, .38], .09, options.jacket ?? mats.suit);
-  sphere(person, .09, [-.26, 1.58, .4], options.skin ?? mats.skin, [1, .78, 1], 14);
-  sphere(person, .09, [.3, 1.58, .4], options.skin ?? mats.skin, [1, .78, 1], 14);
+  const jacket = options.jacket ?? mats.suit;
+  cylinder(person, .24, .31, .84, [0, 1.75, 0], jacket, [0, 0, options.lean ?? 0], 14);
+  box(person, [.5, .08, .54], [0, 1.31, .01], jacket);
+  sphere(person, .24, [0, 2.3, .015], options.skin ?? mats.skin, [.87, 1.08, .92], 24);
+  facialDetails(person, 2.3, options.skin ?? mats.skin, { backView: options.backView, yaw: options.faceYaw ?? 0, lips: options.lips });
+  createHat(person, options.hat ?? jacket, [0, 2.57, 0], .9, options.hatTilt ?? 0);
+  limbBetween(person, [-.22, 1.95, .04], [-.25, 1.56, .39], .085, jacket);
+  limbBetween(person, [.22, 1.95, .04], [.28, 1.56, .39], .085, jacket);
+  sphere(person, .083, [-.25, 1.53, .4], options.skin ?? mats.skin, [1, .76, 1], 14);
+  sphere(person, .083, [.28, 1.53, .4], options.skin ?? mats.skin, [1, .76, 1], 14);
+  limbBetween(person, [-.14, 1.32, -.02], [-.17, .64, .02], .105, jacket);
+  limbBetween(person, [.14, 1.32, -.02], [.18, .64, .02], .105, jacket);
+  box(person, [.18, .12, .38], [-.17, .45, .17], mats.shadow);
+  box(person, [.18, .12, .38], [.18, .45, .17], mats.shadow);
   return person;
 }
 
-function createWoman(options) {
+function seatedWoman(options) {
   const person = new THREE.Group();
   person.position.set(...options.position);
   person.rotation.y = options.rotationY ?? 0;
+  person.scale.setScalar(options.scale ?? 1);
   diner.add(person);
-
-  cylinder(person, .23, .31, .8, [0, 1.83, 0], mats.red, [0, 0, -.03], 16);
-  sphere(person, .245, [0, 2.4, .015], mats.skinLight, [.87, 1.08, .92], 24);
-  sphere(person, .275, [0, 2.44, -.035], mats.hairRed, [.98, 1.05, .92], 22);
-  box(person, [.44, .24, .28], [0, 2.25, -.04], mats.hairRed, [0, 0, 0], true, true);
-  sphere(person, .024, [-.078, 2.44, .235], mats.shadow, [1, .45, .45], 10);
-  sphere(person, .024, [.078, 2.44, .235], mats.shadow, [1, .45, .45], 10);
-  box(person, [.13, .025, .014], [0, 2.3, .24], mats.red, [0, 0, 0], false, false);
-  limbBetween(person, [-.18, 2.03, .08], [-.32, 1.7, .42], .075, mats.skinLight);
-  limbBetween(person, [.18, 2.03, .08], [.06, 1.73, .43], .075, mats.skinLight);
-  sphere(person, .078, [-.32, 1.67, .43], mats.skinLight, [1, .78, 1], 14);
-  sphere(person, .078, [.06, 1.7, .44], mats.skinLight, [1, .78, 1], 14);
+  cylinder(person, .22, .3, .77, [0, 1.76, 0], mats.red, [0, 0, -.025], 16);
+  box(person, [.46, .08, .5], [0, 1.33, 0], mats.red);
+  sphere(person, .238, [0, 2.3, .015], mats.skinLight, [.87, 1.08, .92], 24);
+  sphere(person, .267, [0, 2.35, -.04], mats.hairRed, [.98, 1.04, .92], 22);
+  box(person, [.42, .24, .27], [0, 2.17, -.04], mats.hairRed);
+  facialDetails(person, 2.3, mats.skinLight, { yaw: options.faceYaw ?? 0, lips: mats.red });
+  limbBetween(person, [-.18, 1.98, .07], [-.31, 1.61, .42], .073, mats.skinLight);
+  limbBetween(person, [.18, 1.98, .07], [.04, 1.63, .43], .073, mats.skinLight);
+  sphere(person, .075, [-.31, 1.58, .43], mats.skinLight, [1, .76, 1], 14);
+  sphere(person, .075, [.04, 1.6, .44], mats.skinLight, [1, .76, 1], 14);
+  limbBetween(person, [-.12, 1.34, -.02], [-.14, .64, .02], .09, mats.red);
+  limbBetween(person, [.12, 1.34, -.02], [.15, .64, .02], .09, mats.red);
   return person;
 }
 
-function createServer(options) {
+function server(options) {
   const person = new THREE.Group();
   person.position.set(...options.position);
   person.rotation.y = options.rotationY ?? 0;
+  person.scale.setScalar(options.scale ?? 1);
   diner.add(person);
-
-  cylinder(person, .25, .33, .92, [0, 1.95, 0], mats.white, [0, 0, -.16], 14);
-  box(person, [.5, .56, .05], [.03, 1.78, .29], mats.cream, [0, 0, -.16], true, true);
-  sphere(person, .24, [-.06, 2.48, .04], mats.skinLight, [.9, 1.05, .92], 24);
-  sphere(person, .22, [-.08, 2.57, -.07], mats.white, [1, .58, .96], 18);
-  sphere(person, .022, [-.13, 2.5, .245], mats.shadow, [1, .5, .5], 10);
-  sphere(person, .022, [.02, 2.47, .245], mats.shadow, [1, .5, .5], 10);
-  limbBetween(person, [-.22, 2.05, .05], [-.48, 1.64, .44], .075, mats.white);
-  limbBetween(person, [.22, 2.04, .05], [.5, 1.65, .42], .075, mats.white);
-  sphere(person, .082, [-.48, 1.61, .45], mats.skinLight, [1, .78, 1], 14);
-  sphere(person, .082, [.5, 1.62, .43], mats.skinLight, [1, .78, 1], 14);
+  cylinder(person, .24, .32, .88, [0, 1.86, 0], mats.white, [0, 0, -.12], 14);
+  box(person, [.48, .55, .05], [.03, 1.72, .29], mats.cream, [0, 0, -.12]);
+  sphere(person, .232, [-.05, 2.38, .035], mats.skinLight, [.9, 1.05, .92], 24);
+  sphere(person, .215, [-.07, 2.48, -.07], mats.white, [1, .58, .96], 18);
+  facialDetails(person, 2.38, mats.skinLight, { yaw: -.08, lips: mats.wood });
+  limbBetween(person, [-.21, 1.98, .05], [-.48, 1.58, .42], .073, mats.white);
+  limbBetween(person, [.21, 1.98, .05], [.48, 1.58, .41], .073, mats.white);
+  sphere(person, .08, [-.48, 1.55, .43], mats.skinLight, [1, .76, 1], 14);
+  sphere(person, .08, [.48, 1.55, .42], mats.skinLight, [1, .76, 1], 14);
+  limbBetween(person, [-.13, 1.42, 0], [-.16, .72, .02], .1, mats.white);
+  limbBetween(person, [.13, 1.42, 0], [.17, .72, .02], .1, mats.white);
   return person;
 }
 
-createSeatedMan({ position: [2.12, .02, 1.5], rotationY: Math.PI * .94, backView: true, jacket: mats.suit, hat: mats.suit, lean: -.05 });
-createSeatedMan({ position: [5.45, .03, 1.52], rotationY: Math.PI * .98, jacket: mats.navy, hat: mats.navy, skin: mats.skinLight, lean: .02 });
-createWoman({ position: [6.55, .03, 1.55], rotationY: Math.PI * .98 });
-createServer({ position: [8.12, .04, 1.77], rotationY: Math.PI * .94 });
+const lonePatron = seatedMan({ position: [-.72, .03, 3.95], rotationY: .03, backView: true, jacket: mats.suit, hat: mats.suit, lean: -.04, scale: 1.02 });
+const man = seatedMan({ position: [4.82, .03, 3.86], rotationY: .02, jacket: mats.navy, hat: mats.navy, skin: mats.skinLight, faceYaw: .16, lean: .015 });
+const woman = seatedWoman({ position: [5.95, .03, 3.88], rotationY: .02, faceYaw: -.22, scale: .98 });
+const attendant = server({ position: [7.85, .03, 4.78], rotationY: Math.PI, scale: 1.01 });
+box(diner, [.24, .025, .16], [5.88, 1.69, 4.03], mats.cream, [0, -.18, 0], false, true);
 
-const yellowDoorTexture = canvasTexture((ctx, w, h) => {
-  ctx.fillStyle = '#cdbf65';
-  ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = '#455b51';
-  ctx.fillRect(w * .56, h * .41, w * .12, h * .13);
-  ctx.strokeStyle = 'rgba(255,245,190,.18)';
-  ctx.lineWidth = 6;
-  ctx.strokeRect(8, 8, w - 16, h - 16);
-}, 360, 840);
-signPlane(diner, yellowDoorTexture, [1.15, 2.85], [10.56, 2.22, 3.98], [0, 0, 0], false);
-
-Object.assign(window.NH, { createHat, createFace, createSeatedMan, createWoman, createServer });
+Object.assign(window.NH, { createHat, seatedMan, seatedWoman, server, lonePatron, man, woman, attendant });
