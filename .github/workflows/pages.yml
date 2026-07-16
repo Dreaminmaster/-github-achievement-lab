@@ -19,6 +19,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
+          echo "diagnostic_revision=2"
           curl --silent --show-error \
             --dump-header pages-headers.txt \
             --output pages-body.txt \
