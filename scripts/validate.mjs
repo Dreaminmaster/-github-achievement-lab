@@ -14,7 +14,10 @@ const files = [
   'src/core.js',
   'src/environment.js',
   'src/characters.js',
-  'src/runtime.js'
+  'src/runtime.js',
+  'vendor/three/three.module.min.js',
+  'vendor/three/addons/controls/OrbitControls.js',
+  'vendor/three/addons/lights/RectAreaLightUniformsLib.js'
 ];
 const content = {};
 
@@ -45,7 +48,8 @@ const required = [
   'Painted Worlds',
   'scenes/nighthawks/',
   'scene-selector',
-  'three@0.166.1',
+  '../../vendor/three/three.module.min.js',
+  '../../vendor/three/addons/',
   'OrbitControls',
   'RectAreaLight',
   'touch-action: none',
@@ -54,7 +58,9 @@ const required = [
   'createWoman',
   'createServer',
   'renderer.setAnimationLoop',
-  'world.scale.z = -1'
+  'world.scale.z = -1',
+  'loading-error-message',
+  '__NH_BOOT__'
 ];
 const missing = required.filter((token) => !joined.includes(token));
 if (missing.length) throw new Error(`Missing required markers: ${missing.join(', ')}`);
@@ -75,7 +81,11 @@ if (!content['scenes/nighthawks/index.html'].includes('manifest="../manifest.jso
   throw new Error('The Nighthawks page is missing the shared scene manifest connection.');
 }
 
+if (content['scenes/nighthawks/index.html'].includes('cdn.jsdelivr.net')) {
+  throw new Error('The Nighthawks scene must not depend on a runtime CDN.');
+}
+
 const total = (await Promise.all(files.map(async (path) => (await stat(new URL(path, root))).size))).reduce((a, b) => a + b, 0);
-if (total < 50000) throw new Error(`Site source is unexpectedly small: ${total} bytes.`);
+if (total < 500000) throw new Error(`Site source is unexpectedly small: ${total} bytes.`);
 
 console.log(`Validated ${files.length} site files, ${manifest.scenes.length} scene manifest entry, and ${required.length} required markers (${total} bytes).`);
