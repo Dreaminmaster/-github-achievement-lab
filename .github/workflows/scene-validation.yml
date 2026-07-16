@@ -44,7 +44,7 @@ jobs:
           cat /tmp/painted-worlds-server.log
           exit 1
 
-      - name: Browser smoke test both scenes
+      - name: Browser smoke test all scenes
         run: |
           set -euo pipefail
           chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
@@ -52,7 +52,7 @@ jobs:
             slug="$1"
             output="/tmp/${slug}.html"
             errors="/tmp/${slug}.errors"
-            timeout 55s "$chrome" \
+            timeout 70s "$chrome" \
               --headless=new \
               --no-sandbox \
               --disable-dev-shm-usage \
@@ -61,7 +61,7 @@ jobs:
               --enable-unsafe-swiftshader \
               --enable-webgl \
               --ignore-gpu-blocklist \
-              --virtual-time-budget=20000 \
+              --virtual-time-budget=24000 \
               --dump-dom "http://127.0.0.1:4173/scenes/${slug}/?ci=1" \
               > "$output" 2> "$errors"
             grep -q '<canvas' "$output"
@@ -73,6 +73,8 @@ jobs:
           }
           verify_scene nighthawks
           verify_scene rooms-by-the-sea
+          verify_scene last-supper
+          verify_scene the-subway
 
       - name: Stop static server
         if: always()

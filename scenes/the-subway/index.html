@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#6f746d">
+  <meta name="description" content="乔治·图克《地铁》的手机端可交互三维空间还原。">
+  <title>地铁 · The Subway — 名画空间</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script>
+    (() => {
+      const errors = [];
+      function showFailure(message) {
+        const normalized = String(message || '三维场景未能启动。');
+        if (!errors.includes(normalized)) errors.push(normalized);
+        const render = () => {
+          const loading = document.querySelector('#loading');
+          const panel = document.querySelector('#loading-error');
+          const text = document.querySelector('#loading-error-message');
+          if (!loading || loading.classList.contains('done')) return;
+          loading.classList.add('failed');
+          if (text) text.textContent = errors.at(-1);
+          if (panel) panel.hidden = false;
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render, { once: true });
+        else render();
+      }
+      window.__SUBWAY_BOOT__ = { errors, showFailure };
+      window.addEventListener('error', (event) => {
+        const target = event.target;
+        if (target && target !== window && (target.src || target.href)) {
+          showFailure(`场景资源无法加载：${target.src || target.href}`);
+          return;
+        }
+        if (event.message) showFailure(`场景运行错误：${event.message}`);
+      }, true);
+      window.addEventListener('unhandledrejection', (event) => {
+        showFailure(`场景模块启动失败：${event.reason?.message || event.reason || '未知模块错误'}`);
+      });
+      document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+          const loading = document.querySelector('#loading');
+          if (loading && !loading.classList.contains('done')) showFailure('场景加载时间过长。请重新加载，或返回作品目录。');
+        }, 18000);
+      });
+    })();
+  </script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "../../vendor/three/three.module.min.js",
+        "three/addons/": "../../vendor/three/addons/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <noscript><div class="noscript">这个互动场景需要启用 JavaScript。</div></noscript>
+  <main id="app" aria-label="乔治·图克《地铁》的可交互三维空间研究">
+    <div id="scene"></div>
+    <div id="vignette"></div>
+    <div id="grain"></div>
+    <header class="brand" aria-hidden="true">
+      <h1>地铁</h1>
+      <p>The Subway · spatial study</p>
+    </header>
+    <scene-selector current="the-subway" manifest="../manifest.json" home="../../"></scene-selector>
+    <nav class="toolbar" aria-label="场景控制">
+      <button id="composition" class="primary" aria-label="回到画作构图">构图</button>
+      <button id="explore" aria-pressed="false" aria-label="切换缓慢巡游">巡游</button>
+      <button id="light" aria-pressed="true" aria-label="切换站厅灯光">灯光</button>
+      <button id="reset" aria-label="重置视角">复位</button>
+    </nav>
+    <div id="hint" class="hint">单指旋转 · 双指缩放与移动 · 双击回到构图</div>
+    <div id="loading" class="loading" role="status" aria-live="polite">
+      <div class="loading-inner">
+        <div class="loading-title">THE SUBWAY</div>
+        <div class="loading-line"></div>
+        <div id="loading-error" class="loading-error" hidden>
+          <p id="loading-error-message">三维场景未能启动。</p>
+          <div class="loading-actions">
+            <button type="button" onclick="location.reload()">重新加载</button>
+            <a href="../../">返回目录</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="../../shared/scene-selector.js"></script>
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>

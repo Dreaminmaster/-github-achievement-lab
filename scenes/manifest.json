@@ -28,6 +28,32 @@
       "description": "进入直面海水的明亮房间，在不合现实的门槛、锐利日照与相邻起居室之间探索霍普安静而超现实的空间。",
       "features": ["海面动态延伸", "锐利几何日光", "相邻房间补全", "手机自由漫游"],
       "palette": ["#6aa4b5", "#f0e6c7", "#8f3d30", "#c6b46f"]
+    },
+    {
+      "id": "last-supper",
+      "titleZh": "最后的晚餐",
+      "titleEn": "The Last Supper",
+      "artistZh": "列奥纳多·达·芬奇",
+      "artistEn": "Leonardo da Vinci",
+      "year": "1495–1498",
+      "path": "scenes/last-supper/",
+      "status": "available",
+      "description": "把画中的透视餐厅与圣玛利亚感恩修道院真实食堂连续起来，重建长桌、三扇远景窗、格状天花、十二门徒与中心人物。",
+      "features": ["十三人物群像", "单点透视空间", "修道院食堂延伸", "自然光切换"],
+      "palette": ["#30251f", "#c7bda6", "#8e3b35", "#355e7a"]
+    },
+    {
+      "id": "the-subway",
+      "titleZh": "地铁",
+      "titleEn": "The Subway",
+      "artistZh": "乔治·图克",
+      "artistEn": "George Tooker",
+      "year": 1950,
+      "path": "scenes/the-subway/",
+      "status": "available",
+      "description": "进入由瓷砖柱网、栏栅、闸机、楼梯和多重消失点组成的地下迷宫，在彼此靠近却互相隔绝的人群中穿行。",
+      "features": ["多消失点迷宫", "栏栅投影", "人物群像", "通道画外延伸"],
+      "palette": ["#777d74", "#c6c4b5", "#934737", "#596c58"]
     }
   ]
 }
