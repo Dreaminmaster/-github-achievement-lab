@@ -1,0 +1,79 @@
+name: Validate interactive scenes
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'styles.css'
+      - 'gallery.js'
+      - 'README.md'
+      - 'shared/**'
+      - 'scenes/**'
+      - 'src/**'
+      - 'scripts/**'
+      - 'vendor/**'
+      - '.github/workflows/scene-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate source structure
+        run: node scripts/validate.mjs
+
+      - name: Start static server
+        run: |
+          python3 -m http.server 4173 > /tmp/painted-worlds-server.log 2>&1 &
+          echo $! > /tmp/painted-worlds-server.pid
+          for attempt in $(seq 1 20); do
+            curl --fail --silent http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/painted-worlds-server.log
+          exit 1
+
+      - name: Browser smoke test both scenes
+        run: |
+          set -euo pipefail
+          chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
+          verify_scene() {
+            slug="$1"
+            output="/tmp/${slug}.html"
+            errors="/tmp/${slug}.errors"
+            timeout 55s "$chrome" \
+              --headless=new \
+              --no-sandbox \
+              --disable-dev-shm-usage \
+              --use-gl=angle \
+              --use-angle=swiftshader \
+              --enable-unsafe-swiftshader \
+              --enable-webgl \
+              --ignore-gpu-blocklist \
+              --virtual-time-budget=20000 \
+              --dump-dom "http://127.0.0.1:4173/scenes/${slug}/?ci=1" \
+              > "$output" 2> "$errors"
+            grep -q '<canvas' "$output"
+            grep -q 'class="loading done"' "$output"
+            if grep -q 'class="loading failed"' "$output"; then
+              cat "$errors"
+              exit 1
+            fi
+          }
+          verify_scene nighthawks
+          verify_scene rooms-by-the-sea
+
+      - name: Stop static server
+        if: always()
+        run: kill "$(cat /tmp/painted-worlds-server.pid)" 2>/dev/null || true
