@@ -1,15 +1,32 @@
-# GitHub Workflow Lab
+# GitHub Workflow Lab · Nighthawks 3D
 
-A private practice repository for learning GitHub issues, branches, pull requests, merge strategies, and repository maintenance.
+This repository now hosts a mobile-first, interactive 3D spatial study inspired by Edward Hopper's *Nighthawks* (1942).
 
-## Purpose
+## Experience
 
-- Practice small, reviewable changes.
-- Keep a clear record of issue and pull-request workflows.
-- Avoid modifying production repositories while learning GitHub features.
+- Procedurally modelled diner, curved glass facade, counter, stools, street, storefronts, four figures, coffee urns, cups, signage, and night lighting.
+- Mobile-first one-finger orbit, two-finger pan/zoom, double-tap composition reset, and responsive camera framing.
+- Painterly materials, subtle grain, fog, shadows, reflective glass, and an optional slow orbit.
+- No build step and no downloaded 3D assets: the complete scene is generated in the browser with Three.js.
 
-## Working rules
+## Local preview
 
-1. Each change should have a narrow purpose.
-2. Pull requests should describe what changed and why.
-3. Completed exercises remain documented for future reference.
+```bash
+python3 -m http.server 4173
+```
+
+Then open `http://localhost:4173`.
+
+## Validation
+
+```bash
+node scripts/validate.mjs
+```
+
+## Deployment
+
+`.github/workflows/pages.yml` validates pull requests and deploys the repository root to GitHub Pages after changes reach `main`.
+
+## Earlier lab documents
+
+The original workflow-practice notes remain under `docs/`.
