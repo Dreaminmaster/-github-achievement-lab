@@ -15,6 +15,7 @@ function sceneArtwork(scene) {
   if (scene.id === 'nighthawks') {
     return `
       <div class="nighthawks-mini" aria-hidden="true">
+        <span class="mini-city-block"></span>
         <span class="mini-building"></span>
         <span class="mini-window"></span>
         <span class="mini-counter"></span>
@@ -22,6 +23,19 @@ function sceneArtwork(scene) {
         <span class="mini-person mini-person-b"></span>
         <span class="mini-person mini-person-c"></span>
         <span class="mini-street"></span>
+      </div>
+    `;
+  }
+
+  if (scene.id === 'rooms-by-the-sea') {
+    return `
+      <div class="rooms-mini" aria-hidden="true">
+        <span class="rooms-wall"></span>
+        <span class="rooms-shadow"></span>
+        <span class="rooms-door"></span>
+        <span class="rooms-ocean"></span>
+        <span class="rooms-floor"></span>
+        <span class="rooms-side-room"></span>
       </div>
     `;
   }
@@ -35,9 +49,14 @@ function sceneArtwork(scene) {
 
 function sceneCard(scene, index) {
   const palette = Array.isArray(scene.palette) ? scene.palette : [];
-  const colors = [palette[0] || '#101719', palette[1] || '#e8dfb4', palette[2] || '#8d3a31', palette[3] || '#426b61'];
+  const colors = [
+    palette[0] || '#101719',
+    palette[1] || '#e8dfb4',
+    palette[2] || '#8d3a31',
+    palette[3] || '#426b61'
+  ];
   const href = new URL(scene.path, document.baseURI).href;
-  const featureText = Array.isArray(scene.features) ? scene.features.slice(0, 3).join(' · ') : '';
+  const featureText = Array.isArray(scene.features) ? scene.features.slice(0, 4).join(' · ') : '';
 
   return `
     <a class="scene-card" href="${href}" style="--scene-dark:${colors[0]};--scene-light:${colors[1]};--scene-accent:${colors[2]};--scene-secondary:${colors[3]}">
@@ -66,7 +85,9 @@ async function loadGallery() {
     const response = await fetch('./scenes/manifest.json', { cache: 'no-cache' });
     if (!response.ok) throw new Error(`Manifest request failed: ${response.status}`);
     const data = await response.json();
-    const scenes = Array.isArray(data.scenes) ? data.scenes.filter((scene) => scene.status === 'available') : [];
+    const scenes = Array.isArray(data.scenes)
+      ? data.scenes.filter((scene) => scene.status === 'available')
+      : [];
 
     document.title = `${data.siteTitleZh || '名画空间'} · ${data.siteTitleEn || 'Painted Worlds'}`;
     if (siteDescription && data.description) siteDescription.textContent = data.description;
