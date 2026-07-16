@@ -1,11 +1,14 @@
-checked_at=2026-07-16T19:17:34Z
+checked_at=2026-07-16T19:18:34Z
 repository=Dreaminmaster/-github-achievement-lab
-http_code=200
-curl_exit=0
-response_body=
+pages_api_http_code=200
+pages_status=built
+html_url=https://dreaminmaster.github.io/-github-achievement-lab/
+live_site_http_code=200
+live_site_title=<title>名画空间 · Painted Worlds</title>
+pages_api_response=
 {
   "url": "https://api.github.com/repos/Dreaminmaster/-github-achievement-lab/pages",
-  "status": "building",
+  "status": "built",
   "cname": null,
   "custom_404": false,
   "html_url": "https://dreaminmaster.github.io/-github-achievement-lab/",
@@ -19,3 +22,103 @@ response_body=
   "pending_domain_unverified_at": null,
   "https_enforced": true
 }
+
+recent_builds=
+[
+  {
+    "url": "https://api.github.com/repos/Dreaminmaster/-github-achievement-lab/pages/builds/1099107828",
+    "status": "built",
+    "error": {
+      "message": null
+    },
+    "pusher": {
+      "login": "Dreaminmaster",
+      "id": 189544503,
+      "node_id": "U_kgDOC0w4Nw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/189544503?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/Dreaminmaster",
+      "html_url": "https://github.com/Dreaminmaster",
+      "followers_url": "https://api.github.com/users/Dreaminmaster/followers",
+      "following_url": "https://api.github.com/users/Dreaminmaster/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Dreaminmaster/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/Dreaminmaster/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Dreaminmaster/subscriptions",
+      "organizations_url": "https://api.github.com/users/Dreaminmaster/orgs",
+      "repos_url": "https://api.github.com/users/Dreaminmaster/repos",
+      "events_url": "https://api.github.com/users/Dreaminmaster/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/Dreaminmaster/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "commit": "2f522f0f16aee4eadd1af06c3d14cc74e50107e3",
+    "duration": 19732,
+    "created_at": "2026-07-16T19:18:14Z",
+    "updated_at": "2026-07-16T19:18:33Z"
+  },
+  {
+    "url": "https://api.github.com/repos/Dreaminmaster/-github-achievement-lab/pages/builds/1099106997",
+    "status": "built",
+    "error": {
+      "message": null
+    },
+    "pusher": {
+      "login": "github-actions[bot]",
+      "id": 41898282,
+      "node_id": "MDM6Qm90NDE4OTgyODI=",
+      "avatar_url": "https://avatars.githubusercontent.com/in/15368?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/github-actions%5Bbot%5D",
+      "html_url": "https://github.com/apps/github-actions",
+      "followers_url": "https://api.github.com/users/github-actions%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/github-actions%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/github-actions%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/github-actions%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/github-actions%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "commit": "908be05dca77a91d7f502d825ea01f7c9cf7dd91",
+    "duration": 21061,
+    "created_at": "2026-07-16T19:17:36Z",
+    "updated_at": "2026-07-16T19:17:57Z"
+  },
+  {
+    "url": "https://api.github.com/repos/Dreaminmaster/-github-achievement-lab/pages/builds/1099106804",
+    "status": "errored",
+    "error": {
+      "message": "Page build failed."
+    },
+    "pusher": {
+      "login": "Dreaminmaster",
+      "id": 189544503,
+      "node_id": "U_kgDOC0w4Nw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/189544503?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/Dreaminmaster",
+      "html_url": "https://github.com/Dreaminmaster",
+      "followers_url": "https://api.github.com/users/Dreaminmaster/followers",
+      "following_url": "https://api.github.com/users/Dreaminmaster/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Dreaminmaster/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/Dreaminmaster/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Dreaminmaster/subscriptions",
+      "organizations_url": "https://api.github.com/users/Dreaminmaster/orgs",
+      "repos_url": "https://api.github.com/users/Dreaminmaster/repos",
+      "events_url": "https://api.github.com/users/Dreaminmaster/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/Dreaminmaster/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "commit": "ebe33b58567ea282bd942e9c57c2249ad57908ab",
+    "duration": 0,
+    "created_at": "2026-07-16T19:17:27Z",
+    "updated_at": "2026-07-16T19:17:36Z"
+  }
+]
