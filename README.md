@@ -7,6 +7,8 @@
 **作品目录：**  
 https://dreaminmaster.github.io/-github-achievement-lab/
 
+进入任一场景后，点击右上角的场景名称即可返回作品目录或切换到其他名画。
+
 ## 已开放场景
 
 | 作品 | 作者 | 年份 | 简介 | 在线体验 |
