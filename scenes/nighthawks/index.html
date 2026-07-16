@@ -7,11 +7,62 @@
   <meta name="description" content="霍普《夜游者》的手机端可交互三维场景还原。">
   <title>夜游者 · Nighthawks — 名画空间</title>
   <link rel="stylesheet" href="./styles.css">
+  <script>
+    (() => {
+      const errors = [];
+
+      function showFailure(message) {
+        const normalized = String(message || '三维场景未能启动。');
+        if (!errors.includes(normalized)) errors.push(normalized);
+
+        const render = () => {
+          const loading = document.querySelector('#loading');
+          const panel = document.querySelector('#loading-error');
+          const text = document.querySelector('#loading-error-message');
+          if (!loading || loading.classList.contains('done')) return;
+          loading.classList.add('failed');
+          if (text) text.textContent = errors.at(-1);
+          if (panel) panel.hidden = false;
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', render, { once: true });
+        } else {
+          render();
+        }
+      }
+
+      window.__NH_BOOT__ = { errors, showFailure };
+
+      window.addEventListener('error', (event) => {
+        const target = event.target;
+        if (target && target !== window && (target.src || target.href)) {
+          showFailure(`场景资源无法加载：${target.src || target.href}`);
+          return;
+        }
+        if (event.message) showFailure(`场景运行错误：${event.message}`);
+      }, true);
+
+      window.addEventListener('unhandledrejection', (event) => {
+        const reason = event.reason?.message || event.reason || '未知模块错误';
+        showFailure(`场景模块启动失败：${reason}`);
+      });
+
+      document.addEventListener('DOMContentLoaded', () => {
+        window.setTimeout(() => {
+          const loading = document.querySelector('#loading');
+          if (loading && !loading.classList.contains('done')) {
+            showFailure('场景加载时间过长。请重新加载；若仍失败，可返回作品目录。');
+          }
+        }, 15000);
+      });
+    })();
+  </script>
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/"
+        "three": "../../vendor/three/three.module.min.js",
+        "three/addons/": "../../vendor/three/addons/"
       }
     }
   </script>
@@ -38,6 +89,13 @@
       <div class="loading-inner">
         <div class="loading-title">NIGHTHAWKS</div>
         <div class="loading-line"></div>
+        <div id="loading-error" class="loading-error" hidden>
+          <p id="loading-error-message">三维场景未能启动。</p>
+          <div class="loading-actions">
+            <button type="button" onclick="location.reload()">重新加载</button>
+            <a href="../../">返回目录</a>
+          </div>
+        </div>
       </div>
     </div>
   </main>
