@@ -8,6 +8,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 html, body {
   width: 100%;
@@ -159,13 +160,17 @@ button:focus-visible { outline: 2px solid rgba(242, 232, 180, .72); outline-offs
   z-index: 20;
   display: grid;
   place-items: center;
+  padding: 28px;
   background: #061012;
   transition: opacity .85s ease, visibility .85s ease;
 }
 
 .loading.done { opacity: 0; visibility: hidden; }
 
-.loading-inner { text-align: center; }
+.loading-inner {
+  width: min(440px, 100%);
+  text-align: center;
+}
 
 .loading-title {
   color: var(--ink);
@@ -190,6 +195,43 @@ button:focus-visible { outline: 2px solid rgba(242, 232, 180, .72); outline-offs
   animation: load 1.2s ease-in-out infinite;
 }
 
+.loading.failed .loading-line { display: none; }
+
+.loading-error {
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid rgba(240, 230, 186, .18);
+  border-radius: 18px;
+  background: rgba(13, 29, 29, .74);
+  color: rgba(244, 238, 208, .78);
+  font: 500 13px/1.65 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.loading-error p { margin: 0; }
+
+.loading-actions {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 15px;
+}
+
+.loading-actions button,
+.loading-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 108px;
+  height: 40px;
+  padding: 0 15px;
+  border: 1px solid rgba(240, 230, 186, .18);
+  border-radius: 999px;
+  color: #fff7d3;
+  background: rgba(239, 232, 185, .09);
+  font: 600 12px/1 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-decoration: none;
+}
+
 @keyframes load {
   from { transform: translateX(-110%); }
   to { transform: translateX(330%); }
@@ -211,6 +253,9 @@ button:focus-visible { outline: 2px solid rgba(242, 232, 180, .72); outline-offs
   .brand p { font-size: 8px; }
   .toolbar { width: calc(100vw - 28px); justify-content: center; }
   button { flex: 1 1 0; min-width: 0; padding: 0 8px; font-size: 11px; }
+  .loading-actions { flex-direction: column; }
+  .loading-actions button,
+  .loading-actions a { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
