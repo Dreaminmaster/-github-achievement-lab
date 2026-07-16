@@ -1,0 +1,86 @@
+name: Post-merge live scene check
+
+on:
+  push:
+    paths:
+      - '.github/workflows/post-merge-live-check.yml'
+
+permissions:
+  contents: write
+  pages: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for Pages and verify live scenes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          api_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/pages"
+          base_url="https://dreaminmaster.github.io/-github-achievement-lab/"
+          for attempt in $(seq 1 24); do
+            curl --fail --silent \
+              --header "Accept: application/vnd.github+json" \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header "X-GitHub-Api-Version: 2022-11-28" \
+              "$api_url" > /tmp/pages.json
+            status=$(jq -r '.status // "unknown"' /tmp/pages.json)
+            echo "attempt=${attempt} pages_status=${status}"
+            if [ "$status" = "built" ]; then break; fi
+            sleep 10
+          done
+          test "$(jq -r '.status' /tmp/pages.json)" = "built"
+
+          chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
+          verify_scene() {
+            slug="$1"
+            output="/tmp/${slug}.html"
+            errors="/tmp/${slug}.errors"
+            code=$(curl --silent --location --output "/tmp/${slug}.source" --write-out "%{http_code}" "${base_url}scenes/${slug}/?live=${GITHUB_SHA}")
+            test "$code" = "200"
+            timeout 60s "$chrome" \
+              --headless=new \
+              --no-sandbox \
+              --disable-dev-shm-usage \
+              --use-gl=angle \
+              --use-angle=swiftshader \
+              --enable-unsafe-swiftshader \
+              --enable-webgl \
+              --ignore-gpu-blocklist \
+              --virtual-time-budget=22000 \
+              --dump-dom "${base_url}scenes/${slug}/?live=${GITHUB_SHA}" \
+              > "$output" 2> "$errors"
+            canvas_count=$(grep -o '<canvas' "$output" | wc -l | tr -d ' ')
+            done_count=$(grep -o 'class="loading done"' "$output" | wc -l | tr -d ' ')
+            failed_count=$(grep -o 'class="loading failed"' "$output" | wc -l | tr -d ' ')
+            test "$canvas_count" -ge 1
+            test "$done_count" -ge 1
+            test "$failed_count" -eq 0
+            echo "${slug}_http=200"
+            echo "${slug}_canvas=${canvas_count}"
+            echo "${slug}_loading_done=${done_count}"
+          }
+
+          root_code=$(curl --silent --location --output /tmp/root.html --write-out "%{http_code}" "${base_url}?live=${GITHUB_SHA}")
+          {
+            echo "checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "commit=${GITHUB_SHA}"
+            echo "pages_status=$(jq -r '.status' /tmp/pages.json)"
+            echo "root_http=${root_code}"
+            echo "root_has_two_scenes=$(grep -c 'rooms-by-the-sea' /tmp/root.html || true)"
+            verify_scene nighthawks
+            verify_scene rooms-by-the-sea
+          } > live-check-result.txt
+
+      - name: Commit live verification result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add live-check-result.txt
+          git commit -m "Record post-merge Hopper scene verification"
+          git push
