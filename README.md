@@ -62,9 +62,9 @@ node scripts/validate.mjs
 
 ## 部署
 
-`.github/workflows/pages.yml` 会验证作品目录、场景清单、共享选择器和全部场景文件，并在 `main` 更新后部署整个仓库到 GitHub Pages。
+站点直接从 `main` 分支的仓库根目录发布。仓库包含 `.nojekyll`，GitHub Pages 会按原样提供 HTML、CSS、JavaScript 和所有场景子目录。
 
-已于 2026-07-17 在启用 GitHub Pages 后重新触发发布。
+Pages 设置应为：`Deploy from a branch` → `main` → `/(root)`。
 
 ## 原 GitHub 练习文档
 
