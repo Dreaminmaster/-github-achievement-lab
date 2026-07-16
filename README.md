@@ -64,6 +64,8 @@ node scripts/validate.mjs
 
 `.github/workflows/pages.yml` 会验证作品目录、场景清单、共享选择器和全部场景文件，并在 `main` 更新后部署整个仓库到 GitHub Pages。
 
+已于 2026-07-17 在启用 GitHub Pages 后重新触发发布。
+
 ## 原 GitHub 练习文档
 
 仓库早期的 GitHub 工作流练习资料保留在 [`docs/`](./docs/) 中。
