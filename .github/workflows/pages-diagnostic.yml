@@ -16,57 +16,70 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Wait for Pages and verify live URL
+      - name: Verify Pages, routes, assets, and browser render
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
           api_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/pages"
-          build_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/pages/builds?per_page=3"
+          base_url="https://dreaminmaster.github.io/-github-achievement-lab/"
+          scene_url="${base_url}scenes/nighthawks/"
 
-          for attempt in $(seq 1 18); do
-            api_code=$(curl --silent --show-error \
-              --output pages-api-body.json \
-              --write-out "%{http_code}" \
-              --header "Accept: application/vnd.github+json" \
-              --header "Authorization: Bearer ${GH_TOKEN}" \
-              --header "X-GitHub-Api-Version: 2022-11-28" \
-              "${api_url}")
-            pages_status=$(jq -r '.status // "unknown"' pages-api-body.json 2>/dev/null)
-            echo "attempt=${attempt} api_code=${api_code} pages_status=${pages_status}"
-            if [ "${pages_status}" != "building" ]; then
-              break
-            fi
-            sleep 10
-          done
-
-          html_url=$(jq -r '.html_url // "https://dreaminmaster.github.io/-github-achievement-lab/"' pages-api-body.json 2>/dev/null)
-          site_code=$(curl --silent --show-error --location \
-            --output live-site-body.html \
+          api_code=$(curl --silent --show-error \
+            --output pages-api-body.json \
             --write-out "%{http_code}" \
-            "${html_url}")
-          site_title=$(grep -o -m1 '<title>[^<]*</title>' live-site-body.html 2>/dev/null || true)
-
-          curl --silent --show-error \
-            --output pages-builds.json \
             --header "Accept: application/vnd.github+json" \
             --header "Authorization: Bearer ${GH_TOKEN}" \
             --header "X-GitHub-Api-Version: 2022-11-28" \
-            "${build_url}" || true
+            "${api_url}")
+          pages_status=$(jq -r '.status // "unknown"' pages-api-body.json 2>/dev/null)
+
+          check_url() {
+            label="$1"
+            url="$2"
+            code=$(curl --silent --show-error --location --output "${label}.body" --write-out "%{http_code}" "${url}")
+            echo "${label}_http_code=${code}"
+          }
 
           {
             echo "checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "repository=${GITHUB_REPOSITORY}"
             echo "pages_api_http_code=${api_code}"
             echo "pages_status=${pages_status}"
-            echo "html_url=${html_url}"
-            echo "live_site_http_code=${site_code}"
-            echo "live_site_title=${site_title}"
-            echo "pages_api_response="
-            cat pages-api-body.json 2>/dev/null || true
-            echo
-            echo "recent_builds="
-            cat pages-builds.json 2>/dev/null || true
+            check_url root "${base_url}"
+            check_url scene "${scene_url}"
+            check_url scene_css "${scene_url}styles.css"
+            check_url scene_app "${scene_url}src/app.js"
+            check_url root_app "${base_url}src/app.js"
+            check_url core "${base_url}src/core.js"
+            check_url environment "${base_url}src/environment.js"
+            check_url characters "${base_url}src/characters.js"
+            check_url runtime "${base_url}src/runtime.js"
+            check_url manifest "${base_url}scenes/manifest.json"
+            check_url selector "${base_url}shared/scene-selector.js"
+            echo "root_title=$(grep -o -m1 '<title>[^<]*</title>' root.body 2>/dev/null || true)"
+            echo "scene_title=$(grep -o -m1 '<title>[^<]*</title>' scene.body 2>/dev/null || true)"
+
+            chrome_bin=$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)
+            echo "chrome_bin=${chrome_bin}"
+            if [ -n "${chrome_bin}" ]; then
+              timeout 40s "${chrome_bin}" \
+                --headless=new \
+                --no-sandbox \
+                --disable-dev-shm-usage \
+                --use-gl=swiftshader \
+                --enable-webgl \
+                --ignore-gpu-blocklist \
+                --virtual-time-budget=12000 \
+                --dump-dom "${scene_url}?diagnostic=1" > scene-rendered.html 2>chrome-stderr.txt
+              chrome_exit=$?
+              canvas_count=$(grep -o '<canvas' scene-rendered.html 2>/dev/null | wc -l | tr -d ' ')
+              loading_done_count=$(grep -o 'class="loading done"' scene-rendered.html 2>/dev/null | wc -l | tr -d ' ')
+              echo "chrome_exit=${chrome_exit}"
+              echo "rendered_canvas_count=${canvas_count}"
+              echo "rendered_loading_done_count=${loading_done_count}"
+              echo "chrome_errors="
+              tail -n 20 chrome-stderr.txt 2>/dev/null || true
+            fi
           } > pages-diagnostic-result.txt
 
       - name: Commit diagnostic result
@@ -74,5 +87,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add pages-diagnostic-result.txt
-          git commit -m "Record final GitHub Pages verification" || exit 0
+          git commit -m "Record Nighthawks live route verification" || exit 0
           git push
