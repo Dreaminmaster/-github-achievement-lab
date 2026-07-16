@@ -1,0 +1,21 @@
+checked_at=2026-07-16T19:17:34Z
+repository=Dreaminmaster/-github-achievement-lab
+http_code=200
+curl_exit=0
+response_body=
+{
+  "url": "https://api.github.com/repos/Dreaminmaster/-github-achievement-lab/pages",
+  "status": "building",
+  "cname": null,
+  "custom_404": false,
+  "html_url": "https://dreaminmaster.github.io/-github-achievement-lab/",
+  "build_type": "legacy",
+  "source": {
+    "branch": "main",
+    "path": "/"
+  },
+  "public": true,
+  "protected_domain_state": null,
+  "pending_domain_unverified_at": null,
+  "https_enforced": true
+}
