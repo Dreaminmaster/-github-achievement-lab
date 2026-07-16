@@ -1,32 +1,67 @@
-# GitHub Workflow Lab · Nighthawks 3D
+# 名画空间 · Painted Worlds
 
-This repository now hosts a mobile-first, interactive 3D spatial study inspired by Edward Hopper's *Nighthawks* (1942).
+把经典名画重新搭建成可以进入、移动和观察的互动三维空间。项目以手机端体验为主，同时支持电脑浏览；每幅画拥有独立网址，并可通过场景右上角的选择器在作品之间切换。
 
-## Experience
+## 在线入口
 
-- Procedurally modelled diner, curved glass facade, counter, stools, street, storefronts, four figures, coffee urns, cups, signage, and night lighting.
-- Mobile-first one-finger orbit, two-finger pan/zoom, double-tap composition reset, and responsive camera framing.
-- Painterly materials, subtle grain, fog, shadows, reflective glass, and an optional slow orbit.
-- No build step and no downloaded 3D assets: the complete scene is generated in the browser with Three.js.
+**作品目录：**  
+https://dreaminmaster.github.io/-github-achievement-lab/
 
-## Local preview
+## 已开放场景
+
+| 作品 | 作者 | 年份 | 简介 | 在线体验 |
+| --- | --- | ---: | --- | --- |
+| **《夜游者》 Nighthawks** | 爱德华·霍普 Edward Hopper | 1942 | 以完整三维方式还原深夜街角的玻璃餐厅、人物、柜台、街道、店铺和冷暖灯光关系。支持手机单指旋转、双指缩放与移动、构图复位、灯光切换和缓慢环绕。 | https://dreaminmaster.github.io/-github-achievement-lab/scenes/nighthawks/ |
+
+## 网址与场景结构
+
+GitHub Pages 在一个仓库中提供一个站点，但这个站点可以包含很多独立子网址，因此不需要为每幅画新建仓库。
+
+```text
+/                              作品目录
+/scenes/nighthawks/            《夜游者》
+/scenes/<future-scene>/        后续名画场景
+```
+
+场景资料统一记录在 [`scenes/manifest.json`](./scenes/manifest.json)。目录页和场景右上角选择器都会读取这份清单。以后新增名画时，只需：
+
+1. 在 `scenes/` 下建立新的场景目录。
+2. 为场景提供独立的 `index.html`、样式和运行代码。
+3. 在 `scenes/manifest.json` 中加入作品名称、作者、年份、简介和网址路径。
+4. 在本 README 的“已开放场景”表格中加入简介和在线网址。
+
+## 《夜游者》当前能力
+
+- 程序化建立弧形玻璃餐厅、柜台、吧椅、街道、邻近店铺、四个人物、咖啡机、杯具和招牌。
+- 使用 Three.js 实现真实三维空间，而不是把画作贴到平面上。
+- 手机端支持单指旋转、双指缩放与移动、双击返回画作构图。
+- 支持构图、缓慢环绕、室内灯光和视角复位控制。
+- 包含玻璃、阴影、雾气、空气尘埃、画面颗粒和响应式镜头构图。
+- 场景右上角提供统一作品选择器，可返回目录或切换到后续场景。
+
+## 本地预览
 
 ```bash
 python3 -m http.server 4173
 ```
 
-Then open `http://localhost:4173`.
+然后打开：
 
-## Validation
+```text
+http://localhost:4173/
+http://localhost:4173/scenes/nighthawks/
+```
+
+## 验证
 
 ```bash
 node scripts/validate.mjs
 ```
 
-## Deployment
+## 部署
 
-`.github/workflows/pages.yml` validates pull requests and deploys the repository root to GitHub Pages after changes reach `main`.
+`.github/workflows/pages.yml` 会验证作品目录、场景清单、共享选择器和全部场景文件，并在 `main` 更新后部署整个仓库到 GitHub Pages。
 
-## Earlier lab documents
+## 原 GitHub 练习文档
 
-The original workflow-practice notes remain under `docs/`.
+仓库早期的 GitHub 工作流练习资料保留在 [`docs/`](./docs/) 中。
