@@ -5,8 +5,12 @@ on:
     paths:
       - 'index.html'
       - 'styles.css'
+      - 'gallery.js'
+      - 'shared/**'
+      - 'scenes/**'
       - 'src/**'
       - 'scripts/**'
+      - 'README.md'
       - '.github/workflows/pages.yml'
   push:
     branches: ['main']
@@ -31,7 +35,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate static scene
+      - name: Validate gallery and scenes
         run: node scripts/validate.mjs
 
   deploy:
