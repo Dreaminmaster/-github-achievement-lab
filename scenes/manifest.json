@@ -1,0 +1,20 @@
+{
+  "siteTitleZh": "名画空间",
+  "siteTitleEn": "Painted Worlds",
+  "description": "把平面名画重新搭建成可进入、可观察、可移动的三维空间。",
+  "scenes": [
+    {
+      "id": "nighthawks",
+      "titleZh": "夜游者",
+      "titleEn": "Nighthawks",
+      "artistZh": "爱德华·霍普",
+      "artistEn": "Edward Hopper",
+      "year": 1942,
+      "path": "scenes/nighthawks/",
+      "status": "available",
+      "description": "走进深夜街角的玻璃餐厅，在冷清街道与温暖灯光之间观察霍普最著名的都市夜景。",
+      "features": ["完整三维场景", "手机触控", "自由缩放移动", "画作构图复位"],
+      "palette": ["#071416", "#e8dfb4", "#9f2d2b", "#1b6d59"]
+    }
+  ]
+}
