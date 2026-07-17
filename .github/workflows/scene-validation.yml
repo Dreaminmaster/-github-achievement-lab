@@ -74,6 +74,8 @@ jobs:
             grep -q '<canvas' "$output" || { echo "${slug}: no WebGL canvas"; failed=1; }
             grep -q 'class="loading done"' "$output" || { echo "${slug}: loading did not finish"; failed=1; }
             grep -q 'data-composition-ready="true"' "$output" || { echo "${slug}: composition return did not finish"; failed=1; }
+            grep -q 'data-composition-strategy="anchored"' "$output" || { echo "${slug}: composition is not anchored"; failed=1; }
+            grep -q 'data-composition-adjusted="0"' "$output" || { echo "${slug}: composition was unexpectedly relocated"; failed=1; }
             if grep -q 'class="loading failed"' "$output"; then echo "${slug}: runtime entered failure state"; failed=1; fi
           }
           verify_scene nighthawks
@@ -81,6 +83,21 @@ jobs:
           verify_scene last-supper
           verify_scene the-subway
           exit "$failed"
+
+      - name: Verify stationary mobile touch stability
+        run: |
+          set -euo pipefail
+          chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
+          node scripts/mobile-tap-stability.mjs "$chrome"
+
+      - name: Upload tap stability evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-tap-stability
+          path: /tmp/tap-stability/*.png
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload composition diagnostics
         if: always()
