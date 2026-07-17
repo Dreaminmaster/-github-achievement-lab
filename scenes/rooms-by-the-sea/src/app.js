@@ -102,10 +102,12 @@ sun.shadow.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048); sun.shad
 const oceanFill = new THREE.DirectionalLight(0x5ba5ba, 1.4); oceanFill.position.set(0,4,-18); scene.add(oceanFill);
 const roomBounce = new THREE.PointLight(0xffe7a8, 1.1, 22, 1.7); roomBounce.position.set(1.8,2.6,-2.9); scene.add(roomBounce);
 
+// The portrait camera shifts left and uses a wider lens so the near-right structural
+// post no longer bisects the sea doorway while the lit wall remains dominant.
 const compositionPresets = {
   wide: { position: [0.65, 3.62, 10.15], target: [0.35, 2.5, -2.0], fov: 40 },
-  square: { position: [0.5, 3.62, 12.4], target: [0.45, 2.52, -2.05], fov: 46 },
-  portrait: { position: [0.2, 3.52, 15.0], target: [0.7, 2.5, -2.25], fov: 52 }
+  square: { position: [-0.35, 3.58, 11.7], target: [0.55, 2.52, -2.1], fov: 50 },
+  portrait: { position: [-1.25, 3.5, 13.35], target: [0.75, 2.5, -2.3], fov: 60 }
 };
 const overviewPresets = {
   wide: { position: [11.8, 7.8, 14.2], target: [0.4, 2.4, -1.3], fov: 43 },
