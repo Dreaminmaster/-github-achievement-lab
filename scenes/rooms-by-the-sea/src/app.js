@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { rebuildRooms } from './fidelity.js';
+import { createSafeComposition } from '../../../shared/safe-composition.js';
 
 const container = document.querySelector('#scene');
 const loading = document.querySelector('#loading');
@@ -11,6 +12,7 @@ const lightButton = document.querySelector('#light');
 const resetButton = document.querySelector('#reset');
 const prefersReducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const isMobile = matchMedia('(max-width: 760px)').matches || navigator.maxTouchPoints > 0;
+const verifyComposition = new URLSearchParams(location.search).has('verifyComposition');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xb7d6df);
@@ -55,19 +57,9 @@ const mats = {
   shadow: makeMaterial(0x6c695d, { roughness: 1, transparent: true, opacity: .42, depthWrite: false }),
   sun: new THREE.MeshBasicMaterial({ color: 0xfff4c1, transparent: true, opacity: .32, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide })
 };
-function box(parent, size, position, material, rotation = [0, 0, 0], cast = true, receive = true) {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
-  mesh.position.set(...position); mesh.rotation.set(...rotation); mesh.castShadow = cast; mesh.receiveShadow = receive; parent.add(mesh); return mesh;
-}
-function cylinder(parent, top, bottom, height, position, material, rotation = [0, 0, 0], segments = 20) {
-  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(top, bottom, height, segments), material);
-  mesh.position.set(...position); mesh.rotation.set(...rotation); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
-}
-function shapeMesh(points, material, position = [0, 0, 0], rotation = [0, 0, 0]) {
-  const shape = new THREE.Shape(); shape.moveTo(points[0][0], points[0][1]);
-  for (const point of points.slice(1)) shape.lineTo(point[0], point[1]); shape.closePath();
-  const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), material); mesh.position.set(...position); mesh.rotation.set(...rotation); mesh.receiveShadow = true; world.add(mesh); return mesh;
-}
+function box(parent, size, position, material, rotation = [0, 0, 0], cast = true, receive = true) { const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material); mesh.position.set(...position); mesh.rotation.set(...rotation); mesh.castShadow = cast; mesh.receiveShadow = receive; parent.add(mesh); return mesh; }
+function cylinder(parent, top, bottom, height, position, material, rotation = [0, 0, 0], segments = 20) { const mesh = new THREE.Mesh(new THREE.CylinderGeometry(top, bottom, height, segments), material); mesh.position.set(...position); mesh.rotation.set(...rotation); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh; }
+function shapeMesh(points, material, position = [0, 0, 0], rotation = [0, 0, 0]) { const shape = new THREE.Shape(); shape.moveTo(points[0][0], points[0][1]); for (const point of points.slice(1)) shape.lineTo(point[0], point[1]); shape.closePath(); const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), material); mesh.position.set(...position); mesh.rotation.set(...rotation); mesh.receiveShadow = true; world.add(mesh); return mesh; }
 
 box(world, [12.4, .22, 11.8], [0, -.12, .4], mats.floor, [0, 0, 0], false, true);
 box(world, [12.4, .22, 11.8], [0, 6.55, .4], mats.wallWarm, [0, 0, 0], false, true);
@@ -78,23 +70,10 @@ const wallSun = shapeMesh([[-5.98,.22],[1.9,.22],[1.9,5.98],[-1.05,5.98]], mats.
 const floorSun = shapeMesh([[-5.95,5.8],[5.75,5.8],[4.55,-4.85],[-2.35,-4.85]], mats.sun, [0,.018,0], [-Math.PI/2,0,0]);
 
 const fidelity = rebuildRooms({ THREE, scene, world, makeMaterial, box, cylinder, shapeMesh, isMobile, renderer });
-fidelity.group.traverse((object) => {
-  if (!object.isMesh || !object.material?.color) return;
-  const color = object.material.color.getHex();
-  if (color === 0x565c58) object.position.y += 2.5;
-  if (color === 0xd8d3c2) {
-    object.material.emissive = new THREE.Color(0x3b382e);
-    object.material.emissiveIntensity = .16;
-  }
-  if (color === 0xd6cfb9 && object.position.y > 6.1) {
-    object.material = object.material.clone();
-    object.material.color.setHex(0x9ca39a);
-    object.material.emissive.setHex(0x292d2a);
-    object.material.emissiveIntensity = .12;
-  }
-});
+fidelity.group.traverse((object) => { if (!object.isMesh || !object.material?.color) return; const color = object.material.color.getHex(); if (color === 0x565c58) object.position.y += 2.5; if (color === 0xd8d3c2) { object.material.emissive = new THREE.Color(0x3b382e); object.material.emissiveIntensity = .16; } if (color === 0xd6cfb9 && object.position.y > 6.1) { object.material = object.material.clone(); object.material.color.setHex(0x9ca39a); object.material.emissive.setHex(0x292d2a); object.material.emissiveIntensity = .12; } });
 const seaDoor = fidelity.group.children.find((child) => child.isGroup && Math.abs(child.position.x - 5.0) < .08 && Math.abs(child.position.z + 5.18) < .08);
 if (seaDoor) seaDoor.rotation.y = -.96;
+const compositionSafety = createSafeComposition({ THREE, root: fidelity.group, targetTolerance: 1.2 });
 
 const ambient = new THREE.HemisphereLight(0xd7edf0, 0x6e6d57, 1.18); scene.add(ambient);
 const sun = new THREE.DirectionalLight(0xfff2bd, 4.8); sun.position.set(11,10,-14); sun.target.position.set(-1.5,1.2,-2.5); sun.castShadow = true;
@@ -102,46 +81,17 @@ sun.shadow.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048); sun.shad
 const oceanFill = new THREE.DirectionalLight(0x5ba5ba, 1.4); oceanFill.position.set(0,4,-18); scene.add(oceanFill);
 const roomBounce = new THREE.PointLight(0xffe7a8, 1.1, 22, 1.7); roomBounce.position.set(1.8,2.6,-2.9); scene.add(roomBounce);
 
-// The portrait camera shifts left and uses a wider lens so the near-right structural
-// post no longer bisects the sea doorway while the lit wall remains dominant.
-const compositionPresets = {
-  wide: { position: [0.65, 3.62, 10.15], target: [0.35, 2.5, -2.0], fov: 40 },
-  square: { position: [-0.35, 3.58, 11.7], target: [0.55, 2.52, -2.1], fov: 50 },
-  portrait: { position: [-1.25, 3.5, 13.35], target: [0.75, 2.5, -2.3], fov: 60 }
-};
-const overviewPresets = {
-  wide: { position: [11.8, 7.8, 14.2], target: [0.4, 2.4, -1.3], fov: 43 },
-  square: { position: [12.8, 8.5, 18.5], target: [0.4, 2.5, -1.5], fov: 48 },
-  portrait: { position: [12.5, 9.2, 23.0], target: [0.5, 2.6, -1.8], fov: 53 }
-};
+const compositionPresets = { wide: { position: [0.65, 3.62, 10.15], target: [0.35, 2.5, -2.0], fov: 40 }, square: { position: [-0.35, 3.58, 11.7], target: [0.55, 2.52, -2.1], fov: 50 }, portrait: { position: [-1.25, 3.5, 13.35], target: [0.75, 2.5, -2.3], fov: 60 } };
+const overviewPresets = { wide: { position: [11.8, 7.8, 14.2], target: [0.4, 2.4, -1.3], fov: 43 }, square: { position: [12.8, 8.5, 18.5], target: [0.4, 2.5, -1.5], fov: 48 }, portrait: { position: [12.5, 9.2, 23.0], target: [0.5, 2.6, -1.8], fov: 53 } };
 function viewportMode() { const aspect = innerWidth / innerHeight; return aspect < .72 ? 'portrait' : aspect < 1.18 ? 'square' : 'wide'; }
 function presetFor(collection) { return collection[viewportMode()]; }
 let sunlightOn = true, autoOrbit = false, tween = null, viewMode = 'composition';
 function ease(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
-function moveCamera(preset, duration = prefersReducedMotion ? 1 : 900) {
-  const toPos = new THREE.Vector3(...preset.position), toTarget = new THREE.Vector3(...preset.target);
-  tween = { start: performance.now(), duration, fromPos: camera.position.clone(), toPos, fromTarget: controls.target.clone(), toTarget, fromFov: camera.fov, toFov: preset.fov };
-}
-function stopAutomatedMotion(){
-  tween=null;
-  if(autoOrbit){autoOrbit=false;controls.autoRotate=false;exploreButton.setAttribute('aria-pressed','false');}
-  viewMode='free'; compositionButton.classList.remove('primary');
-}
-function returnToComposition(){
-  autoOrbit=false;controls.autoRotate=false;exploreButton.setAttribute('aria-pressed','false');
-  viewMode='composition';compositionButton.classList.add('primary');moveCamera(presetFor(compositionPresets));
-}
-compositionButton.addEventListener('click',returnToComposition);
-resetButton.addEventListener('click',returnToComposition);
-exploreButton.addEventListener('click',()=>{
-  tween=null;
-  autoOrbit=!autoOrbit;
-  controls.autoRotate=autoOrbit;
-  controls.autoRotateSpeed=.2;
-  exploreButton.setAttribute('aria-pressed',String(autoOrbit));
-  compositionButton.classList.toggle('primary',!autoOrbit);
-  if(autoOrbit){viewMode='overview';moveCamera(presetFor(overviewPresets));}else viewMode='free';
-});
+function moveCamera(preset, duration = prefersReducedMotion ? 1 : 900) { document.documentElement.dataset.compositionReady = 'false'; const toPos = new THREE.Vector3(...preset.position), toTarget = new THREE.Vector3(...preset.target); tween = { start: performance.now(), duration, fromPos: camera.position.clone(), toPos, fromTarget: controls.target.clone(), toTarget, fromFov: camera.fov, toFov: preset.fov }; }
+function stopAutomatedMotion(){ tween=null; compositionSafety.exit(); if(autoOrbit){autoOrbit=false;controls.autoRotate=false;exploreButton.setAttribute('aria-pressed','false');} viewMode='free'; compositionButton.classList.remove('primary'); }
+function returnToComposition(){ autoOrbit=false;controls.autoRotate=false;exploreButton.setAttribute('aria-pressed','false'); viewMode='composition';compositionButton.classList.add('primary');moveCamera(compositionSafety.resolve(presetFor(compositionPresets))); }
+compositionButton.addEventListener('click',returnToComposition); resetButton.addEventListener('click',returnToComposition);
+exploreButton.addEventListener('click',()=>{ tween=null; compositionSafety.exit(); autoOrbit=!autoOrbit; controls.autoRotate=autoOrbit; controls.autoRotateSpeed=.2; exploreButton.setAttribute('aria-pressed',String(autoOrbit)); compositionButton.classList.toggle('primary',!autoOrbit); if(autoOrbit){viewMode='overview';moveCamera(presetFor(overviewPresets));}else viewMode='free'; });
 lightButton.addEventListener('click',()=>{sunlightOn=!sunlightOn;lightButton.setAttribute('aria-pressed',String(sunlightOn));sun.visible=sunlightOn;wallSun.visible=sunlightOn;floorSun.visible=sunlightOn;fidelity.sunLayers.visible=sunlightOn;roomBounce.visible=sunlightOn;renderer.toneMappingExposure=sunlightOn?1.08:.82;});
 controls.addEventListener('start',()=>{hint.classList.add('hidden');stopAutomatedMotion();});
 
@@ -152,9 +102,11 @@ function finishPointer(event){const start=pointerStarts.get(event.pointerId);con
 renderer.domElement.addEventListener('pointerup',finishPointer,{passive:true});renderer.domElement.addEventListener('pointercancel',finishPointer,{passive:true});renderer.domElement.addEventListener('dblclick',returnToComposition);
 
 function applyPresetImmediately(preset){camera.position.set(...preset.position);controls.target.set(...preset.target);camera.fov=preset.fov;camera.updateProjectionMatrix();controls.update();}
-function resize(){camera.aspect=innerWidth/innerHeight;if(viewMode==='composition'&&!tween)applyPresetImmediately(presetFor(compositionPresets));else if(viewMode==='overview'&&!tween)applyPresetImmediately(presetFor(overviewPresets));else camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile?1.35:2));}
+function resize(){camera.aspect=innerWidth/innerHeight;if(viewMode==='composition'&&!tween)applyPresetImmediately(compositionSafety.resolve(presetFor(compositionPresets)));else if(viewMode==='overview'&&!tween)applyPresetImmediately(presetFor(overviewPresets));else camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile?1.35:2));}
 addEventListener('resize',resize,{passive:true});
 const clock=new THREE.Clock();
-function animate(now){const elapsed=clock.getElapsedTime();oceanUniforms.uTime.value=prefersReducedMotion?0:elapsed;fidelity.update(elapsed,prefersReducedMotion);if(tween){const progress=Math.min(1,(now-tween.start)/tween.duration);const eased=ease(progress);camera.position.lerpVectors(tween.fromPos,tween.toPos,eased);controls.target.lerpVectors(tween.fromTarget,tween.toTarget,eased);camera.fov=THREE.MathUtils.lerp(tween.fromFov,tween.toFov,eased);camera.updateProjectionMatrix();if(progress>=1)tween=null;}if(!prefersReducedMotion&&sunlightOn)roomBounce.intensity=1.1+Math.sin(elapsed*.32)*.025;controls.update();renderer.render(scene,camera);}
-const initialPreset=presetFor(compositionPresets);applyPresetImmediately(initialPreset);resize();renderer.setAnimationLoop(animate);
+function animate(now){const elapsed=clock.getElapsedTime();oceanUniforms.uTime.value=prefersReducedMotion?0:elapsed;fidelity.update(elapsed,prefersReducedMotion);if(tween){const progress=Math.min(1,(now-tween.start)/tween.duration);const eased=ease(progress);camera.position.lerpVectors(tween.fromPos,tween.toPos,eased);controls.target.lerpVectors(tween.fromTarget,tween.toTarget,eased);camera.fov=THREE.MathUtils.lerp(tween.fromFov,tween.toFov,eased);camera.updateProjectionMatrix();if(progress>=1){tween=null;if(viewMode==='composition')document.documentElement.dataset.compositionReady='true';}}if(!prefersReducedMotion&&sunlightOn)roomBounce.intensity=1.1+Math.sin(elapsed*.32)*.025;controls.update();renderer.render(scene,camera);}
+const initialPreset=compositionSafety.resolve(presetFor(compositionPresets));applyPresetImmediately(initialPreset);resize();document.documentElement.dataset.compositionReady='true';
+if(verifyComposition){compositionSafety.exit();viewMode='overview';applyPresetImmediately(presetFor(overviewPresets));setTimeout(returnToComposition,80);}
+renderer.setAnimationLoop(animate);
 requestAnimationFrame(()=>{renderer.render(scene,camera);loading.classList.add('done');setTimeout(()=>hint.classList.add('hidden'),5500);});
