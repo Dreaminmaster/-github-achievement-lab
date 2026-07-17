@@ -44,7 +44,7 @@ jobs:
           cat /tmp/painted-worlds-server.log
           exit 1
 
-      - name: Browser smoke test all scenes
+      - name: Exercise composition return in every scene
         run: |
           set -euo pipefail
           chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
@@ -61,11 +61,12 @@ jobs:
               --enable-unsafe-swiftshader \
               --enable-webgl \
               --ignore-gpu-blocklist \
-              --virtual-time-budget=24000 \
-              --dump-dom "http://127.0.0.1:4173/scenes/${slug}/?ci=1" \
+              --virtual-time-budget=26000 \
+              --dump-dom "http://127.0.0.1:4173/scenes/${slug}/?ci=1&verifyComposition=1" \
               > "$output" 2> "$errors"
             grep -q '<canvas' "$output"
             grep -q 'class="loading done"' "$output"
+            grep -q 'data-composition-ready="true"' "$output"
             if grep -q 'class="loading failed"' "$output"; then
               cat "$errors"
               exit 1
@@ -76,7 +77,7 @@ jobs:
           verify_scene last-supper
           verify_scene the-subway
 
-      - name: Capture desktop and mobile composition screenshots
+      - name: Capture post-click desktop and mobile composition screenshots
         run: |
           set -euo pipefail
           mkdir -p /tmp/scene-screenshots/desktop /tmp/scene-screenshots/mobile
@@ -96,9 +97,9 @@ jobs:
               --ignore-gpu-blocklist \
               --hide-scrollbars \
               --window-size="$viewport" \
-              --virtual-time-budget=24000 \
+              --virtual-time-budget=26000 \
               --screenshot="$output" \
-              "http://127.0.0.1:4173/scenes/${slug}/?screenshot=1"
+              "http://127.0.0.1:4173/scenes/${slug}/?screenshot=1&verifyComposition=1"
             test -s "$output"
           }
           for slug in nighthawks rooms-by-the-sea last-supper the-subway; do
