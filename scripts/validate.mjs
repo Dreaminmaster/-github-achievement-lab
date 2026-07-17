@@ -16,16 +16,25 @@ const files = [
   'src/core.js',
   'src/environment.js',
   'src/characters.js',
+  'src/fidelity.js',
+  'src/fidelity-orientation.js',
   'src/runtime.js',
   'scenes/rooms-by-the-sea/index.html',
   'scenes/rooms-by-the-sea/styles.css',
   'scenes/rooms-by-the-sea/src/app.js',
+  'scenes/rooms-by-the-sea/src/fidelity.js',
   'scenes/last-supper/index.html',
   'scenes/last-supper/styles.css',
   'scenes/last-supper/src/app.js',
+  'scenes/last-supper/src/fidelity.js',
+  'scenes/last-supper/src/rebuild-app.js',
+  'scenes/last-supper/src/composition-fix.js',
   'scenes/the-subway/index.html',
   'scenes/the-subway/styles.css',
   'scenes/the-subway/src/app.js',
+  'scenes/the-subway/src/fidelity.js',
+  'scenes/the-subway/src/rebuild-app.js',
+  'scenes/the-subway/src/composition-fix.js',
   'vendor/three/three.module.min.js',
   'vendor/three/addons/controls/OrbitControls.js',
   'vendor/three/addons/lights/RectAreaLightUniformsLib.js'
@@ -49,13 +58,11 @@ const requiredScenes = new Map([
   ['last-supper', 'scenes/last-supper/'],
   ['the-subway', 'scenes/the-subway/']
 ]);
-
 for (const scene of manifest.scenes) {
   if (!scene.id || !scene.titleZh || !scene.titleEn || !scene.path || !scene.description) {
     throw new Error(`Scene manifest entry is incomplete: ${JSON.stringify(scene)}`);
   }
 }
-
 for (const [id, path] of requiredScenes) {
   const scene = manifest.scenes.find((entry) => entry.id === id);
   if (!scene || scene.path !== path || scene.status !== 'available') {
@@ -83,33 +90,47 @@ const requiredMarkers = [
   'multiTouchGesture',
   'THREE.TOUCH.DOLLY_PAN',
   'renderer.setAnimationLoop',
-  'glassCurve',
-  'oppositeBlock',
-  'oceanUniforms',
-  'wallSun',
-  'createDisciple',
-  'windowCenters',
-  'createPassage',
-  'createGate',
-  'centralWoman',
+  'nighthawks-fidelity-rebuild',
+  'faithful-diner',
+  'complete-living-room',
+  'rear-house-extension',
+  'leonardo-perspective-box',
+  'last-supper-fidelity-rebuild',
+  'the-subway-fidelity-rebuild',
+  'rebuildRooms',
+  'rebuildLastSupper',
+  'rebuildSubway',
+  'fidelityDistrict.scale.x = -1',
+  'lowered-last-supper-table',
+  'visible-left-cubicle-bank',
   'loading-error-message'
 ];
-
 const missing = requiredMarkers.filter((token) => !joined.includes(token));
 if (missing.length) throw new Error(`Missing required markers: ${missing.join(', ')}`);
 
-for (const dependency of ['./core.js', './environment.js', './characters.js', './runtime.js']) {
+for (const dependency of ['./core.js', './environment.js', './characters.js', './fidelity.js', './runtime.js', './fidelity-orientation.js']) {
   if (!content['src/app.js'].includes(dependency)) throw new Error(`src/app.js does not import ${dependency}`);
 }
-
 if (!content['scenes/nighthawks/src/app.js'].includes("../../../src/app.js")) {
   throw new Error('The Nighthawks route is not connected to the rebuilt scene runtime.');
+}
+if (!content['scenes/rooms-by-the-sea/src/app.js'].includes("./fidelity.js")) {
+  throw new Error('Rooms by the Sea does not load its fidelity rebuild.');
+}
+if (!content['scenes/last-supper/index.html'].includes('./src/rebuild-app.js') ||
+    !content['scenes/last-supper/index.html'].includes('./src/composition-fix.js') ||
+    !content['scenes/last-supper/src/rebuild-app.js'].includes("./fidelity.js")) {
+  throw new Error('The Last Supper does not use its fidelity runtime and composition correction.');
+}
+if (!content['scenes/the-subway/index.html'].includes('./src/rebuild-app.js') ||
+    !content['scenes/the-subway/index.html'].includes('./src/composition-fix.js') ||
+    !content['scenes/the-subway/src/rebuild-app.js'].includes("./fidelity.js")) {
+  throw new Error('The Subway does not use its fidelity runtime and composition correction.');
 }
 
 for (const path of requiredScenes.values()) {
   if (!content['index.html'].includes(`./${path}`)) throw new Error(`The gallery fallback must link to ${path}.`);
 }
-
 for (const [path, current] of [
   ['scenes/nighthawks/index.html', 'current="nighthawks"'],
   ['scenes/rooms-by-the-sea/index.html', 'current="rooms-by-the-sea"'],
@@ -127,6 +148,6 @@ for (const token of ['海边的房间', 'rooms-by-the-sea', '最后的晚餐', '
 }
 
 const total = (await Promise.all(files.map(async (path) => (await stat(new URL(path, root))).size))).reduce((a, b) => a + b, 0);
-if (total < 600000) throw new Error(`Site source is unexpectedly small: ${total} bytes.`);
+if (total < 650000) throw new Error(`Site source is unexpectedly small: ${total} bytes.`);
 
-console.log(`Validated ${files.length} files, ${manifest.scenes.length} scenes, ${requiredMarkers.length} required markers, and ${total} bytes.`);
+console.log(`Validated ${files.length} files, ${manifest.scenes.length} scenes, ${requiredMarkers.length} fidelity markers, and ${total} bytes.`);

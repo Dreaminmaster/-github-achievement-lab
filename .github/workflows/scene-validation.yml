@@ -76,6 +76,42 @@ jobs:
           verify_scene last-supper
           verify_scene the-subway
 
+      - name: Capture composition screenshots
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/scene-screenshots
+          chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
+          capture_scene() {
+            slug="$1"
+            timeout 70s "$chrome" \
+              --headless=new \
+              --no-sandbox \
+              --disable-dev-shm-usage \
+              --use-gl=angle \
+              --use-angle=swiftshader \
+              --enable-unsafe-swiftshader \
+              --enable-webgl \
+              --ignore-gpu-blocklist \
+              --hide-scrollbars \
+              --window-size=1440,900 \
+              --virtual-time-budget=24000 \
+              --screenshot="/tmp/scene-screenshots/${slug}.png" \
+              "http://127.0.0.1:4173/scenes/${slug}/?screenshot=1"
+            test -s "/tmp/scene-screenshots/${slug}.png"
+          }
+          capture_scene nighthawks
+          capture_scene rooms-by-the-sea
+          capture_scene last-supper
+          capture_scene the-subway
+
+      - name: Upload scene screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: scene-composition-screenshots
+          path: /tmp/scene-screenshots/*.png
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Stop static server
         if: always()
         run: kill "$(cat /tmp/painted-worlds-server.pid)" 2>/dev/null || true

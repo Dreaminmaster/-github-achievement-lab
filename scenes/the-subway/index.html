@@ -62,7 +62,7 @@
     <div id="grain"></div>
     <header class="brand" aria-hidden="true">
       <h1>地铁</h1>
-      <p>The Subway · spatial study</p>
+      <p>The Subway · labyrinth reconstruction</p>
     </header>
     <scene-selector current="the-subway" manifest="../manifest.json" home="../../"></scene-selector>
     <nav class="toolbar" aria-label="场景控制">
@@ -71,7 +71,7 @@
       <button id="light" aria-pressed="true" aria-label="切换站厅灯光">灯光</button>
       <button id="reset" aria-label="重置视角">复位</button>
     </nav>
-    <div id="hint" class="hint">单指旋转 · 双指缩放与移动 · 双击回到构图</div>
+    <div id="hint" class="hint">单指旋转 · 双指缩放与移动 · 可进入左右隔间和多重通道</div>
     <div id="loading" class="loading" role="status" aria-live="polite">
       <div class="loading-inner">
         <div class="loading-title">THE SUBWAY</div>
@@ -87,6 +87,7 @@
     </div>
   </main>
   <script type="module" src="../../shared/scene-selector.js"></script>
-  <script type="module" src="./src/app.js"></script>
+  <script type="module" src="./src/rebuild-app.js"></script>
+  <script type="module" src="./src/composition-fix.js"></script>
 </body>
 </html>
