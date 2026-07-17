@@ -36,8 +36,8 @@ const dust = new THREE.Points(dustGeometry, dustMaterial); diner.add(dust);
 
 const compositionPresets = {
   wide: { position: [-4.8, 5.15, -15.8], target: [3.1, 2.22, 4.25], fov: 38 },
-  square: { position: [-6.05, 5.1, -19.2], target: [3.8, 2.18, 4.35], fov: 56 },
-  portrait: { position: [-7.0, 5.0, -22.4], target: [4.1, 2.15, 4.4], fov: 70 }
+  square: { position: [-6.05, 5.0, -19.2], target: [4.1, 2.18, 4.4], fov: 60 },
+  portrait: { position: [-7.0, 4.75, -22.4], target: [4.5, 2.12, 4.45], fov: 78 }
 };
 const overviewPresets = {
   wide: { position: [-12.2, 8.0, -22.0], target: [3.1, 2.0, 4.4], fov: 44 },
