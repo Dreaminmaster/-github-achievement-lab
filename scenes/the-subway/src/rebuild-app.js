@@ -48,17 +48,17 @@ const compositionSafety=createSafeComposition({THREE,root:fidelity.group,allowRe
 
 const ambient=new THREE.HemisphereLight(0xd8d5bd,0x393f3a,.72);scene.add(ambient);
 const fluorescentGroup=new THREE.Group();scene.add(fluorescentGroup);
-for(const [x,z,w] of [[0,5.4,6.8],[-2.8,.4,4.4],[3.1,-2.0,4.6],[0,-8.6,5.8],[-8.4,1.4,2.8],[8,-8.8,3]]){const rect=new THREE.RectAreaLight(0xe6e2c8,2.75,w,.6);rect.position.set(x,6.15,z);rect.rotation.x=-Math.PI/2;fluorescentGroup.add(rect);}
-const frontFill=new THREE.DirectionalLight(0xc7c5af,.96);frontFill.position.set(-4,8,14);frontFill.castShadow=true;
+for(const [x,z,w] of [[0,5.4,6.8],[-2.8,.4,4.4],[3.1,-2.0,4.6],[0,-8.6,5.8],[-8.4,1.4,2.8],[8,-8.8,3],[0,12.6,7.5],[0,15.6,7.5]]){const rect=new THREE.RectAreaLight(0xe6e2c8,2.75,w,.6);rect.position.set(x,6.15,z);rect.rotation.x=-Math.PI/2;fluorescentGroup.add(rect);}
+const frontFill=new THREE.DirectionalLight(0xc7c5af,.96);frontFill.position.set(-4,8,18);frontFill.castShadow=true;
 frontFill.shadow.mapSize.set(isMobile?1024:2048,isMobile?1024:2048);frontFill.shadow.camera.left=-20;frontFill.shadow.camera.right=20;frontFill.shadow.camera.top=15;frontFill.shadow.camera.bottom=-12;frontFill.shadow.bias=-.00035;scene.add(frontFill);
 const sideFill=new THREE.DirectionalLight(0x87978a,.48);sideFill.position.set(12,5,-8);scene.add(sideFill);
 
 const compositionPresets={
-  wide:{position:[0,4.18,8.25],target:[0,2.58,-2.65],fov:43},
-  square:{position:[0,4.24,8.5],target:[0,2.64,-2.9],fov:58},
-  portrait:{position:[0,4.3,8.72],target:[0,2.7,-3.1],fov:72}
+  wide:{position:[0,4.05,12.6],target:[0,2.65,-2.5],fov:52},
+  square:{position:[0,4.15,13.8],target:[0,2.68,-2.8],fov:68},
+  portrait:{position:[0,4.25,15.0],target:[0,2.75,-3.1],fov:82}
 };
-const overviewPresets={wide:{position:[12.5,8.2,19.5],target:[0,2.65,-3.2],fov:43},square:{position:[13.8,9.4,21.5],target:[0,2.75,-3.8],fov:57},portrait:{position:[14.2,10.0,23.2],target:[0,2.85,-4.2],fov:66}};
+const overviewPresets={wide:{position:[13.5,8.8,22.5],target:[0,2.65,-2.8],fov:47},square:{position:[14.8,9.8,24.5],target:[0,2.75,-3.4],fov:60},portrait:{position:[15.4,10.5,26.2],target:[0,2.85,-3.8],fov:70}};
 function viewportMode(){const aspect=innerWidth/innerHeight;return aspect<.72?'portrait':aspect<1.18?'square':'wide';}
 function presetFor(collection){return collection[viewportMode()];}
 let tween=null,lightOn=true,autoOrbit=false,viewMode='composition';
