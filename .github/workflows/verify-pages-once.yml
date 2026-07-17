@@ -7,12 +7,15 @@ on:
       - '.github/workflows/verify-pages-once.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Wait for deployed safe composition build
         run: |
           set -euo pipefail
@@ -49,3 +52,12 @@ jobs:
             grep -q 'data-composition-ready="true"' "$output"
             if grep -q 'class="loading failed"' "$output"; then exit 1; fi
           done
+
+      - name: Record successful verification
+        run: |
+          printf 'verified_commit=b63f5d8b4fa6312f2e791162898ac774d555a0c2\nverified_at=%s\nscenes=4\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .github/pages-composition-verified.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/pages-composition-verified.txt
+          git commit -m 'Record successful Pages composition verification [skip ci]'
+          git push
