@@ -17,6 +17,7 @@ const files = [
   'src/environment.js',
   'src/characters.js',
   'src/fidelity.js',
+  'src/fidelity-orientation.js',
   'src/runtime.js',
   'scenes/rooms-by-the-sea/index.html',
   'scenes/rooms-by-the-sea/styles.css',
@@ -27,11 +28,13 @@ const files = [
   'scenes/last-supper/src/app.js',
   'scenes/last-supper/src/fidelity.js',
   'scenes/last-supper/src/rebuild-app.js',
+  'scenes/last-supper/src/composition-fix.js',
   'scenes/the-subway/index.html',
   'scenes/the-subway/styles.css',
   'scenes/the-subway/src/app.js',
   'scenes/the-subway/src/fidelity.js',
   'scenes/the-subway/src/rebuild-app.js',
+  'scenes/the-subway/src/composition-fix.js',
   'vendor/three/three.module.min.js',
   'vendor/three/addons/controls/OrbitControls.js',
   'vendor/three/addons/lights/RectAreaLightUniformsLib.js'
@@ -55,7 +58,6 @@ const requiredScenes = new Map([
   ['last-supper', 'scenes/last-supper/'],
   ['the-subway', 'scenes/the-subway/']
 ]);
-
 for (const scene of manifest.scenes) {
   if (!scene.id || !scene.titleZh || !scene.titleEn || !scene.path || !scene.description) {
     throw new Error(`Scene manifest entry is incomplete: ${JSON.stringify(scene)}`);
@@ -98,12 +100,15 @@ const requiredMarkers = [
   'rebuildRooms',
   'rebuildLastSupper',
   'rebuildSubway',
+  'fidelityDistrict.scale.x = -1',
+  'lowered-last-supper-table',
+  'visible-left-cubicle-bank',
   'loading-error-message'
 ];
 const missing = requiredMarkers.filter((token) => !joined.includes(token));
 if (missing.length) throw new Error(`Missing required markers: ${missing.join(', ')}`);
 
-for (const dependency of ['./core.js', './environment.js', './characters.js', './fidelity.js', './runtime.js']) {
+for (const dependency of ['./core.js', './environment.js', './characters.js', './fidelity.js', './runtime.js', './fidelity-orientation.js']) {
   if (!content['src/app.js'].includes(dependency)) throw new Error(`src/app.js does not import ${dependency}`);
 }
 if (!content['scenes/nighthawks/src/app.js'].includes("../../../src/app.js")) {
@@ -113,12 +118,14 @@ if (!content['scenes/rooms-by-the-sea/src/app.js'].includes("./fidelity.js")) {
   throw new Error('Rooms by the Sea does not load its fidelity rebuild.');
 }
 if (!content['scenes/last-supper/index.html'].includes('./src/rebuild-app.js') ||
+    !content['scenes/last-supper/index.html'].includes('./src/composition-fix.js') ||
     !content['scenes/last-supper/src/rebuild-app.js'].includes("./fidelity.js")) {
-  throw new Error('The Last Supper does not use its fidelity runtime.');
+  throw new Error('The Last Supper does not use its fidelity runtime and composition correction.');
 }
 if (!content['scenes/the-subway/index.html'].includes('./src/rebuild-app.js') ||
+    !content['scenes/the-subway/index.html'].includes('./src/composition-fix.js') ||
     !content['scenes/the-subway/src/rebuild-app.js'].includes("./fidelity.js")) {
-  throw new Error('The Subway does not use its fidelity runtime.');
+  throw new Error('The Subway does not use its fidelity runtime and composition correction.');
 }
 
 for (const path of requiredScenes.values()) {
