@@ -16,7 +16,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xb7d6df);
 scene.fog = new THREE.Fog(0xb7d6df, 38, 105);
 const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, .06, 220);
-camera.position.set(-1.3, 3.7, 10.5);
+camera.position.set(.65, 3.62, 10.75);
 const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: 'high-performance', alpha: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.35 : 2));
 renderer.setSize(innerWidth, innerHeight);
@@ -39,7 +39,7 @@ controls.minDistance = 2.6;
 controls.maxDistance = 76;
 controls.minPolarAngle = .18;
 controls.maxPolarAngle = 1.54;
-controls.target.set(.4, 2.55, -1.9);
+controls.target.set(.35, 2.5, -2.0);
 controls.touches.ONE = THREE.TOUCH.ROTATE;
 controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
@@ -70,7 +70,6 @@ function shapeMesh(points, material, position = [0, 0, 0], rotation = [0, 0, 0])
   const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), material); mesh.position.set(...position); mesh.rotation.set(...rotation); mesh.receiveShadow = true; world.add(mesh); return mesh;
 }
 
-// A tiny hidden legacy shell preserves compatibility markers while the visible scene is rebuilt below.
 box(world, [12.4, .22, 11.8], [0, -.12, .4], mats.floor, [0, 0, 0], false, true);
 box(world, [12.4, .22, 11.8], [0, 6.55, .4], mats.wallWarm, [0, 0, 0], false, true);
 box(world, [.22, 6.7, 11.8], [6.1, 3.25, .4], mats.wallWarm);
@@ -88,23 +87,27 @@ fidelity.group.traverse((object) => {
     object.material.emissive = new THREE.Color(0x3b382e);
     object.material.emissiveIntensity = .16;
   }
+  if (color === 0xd6cfb9 && object.position.y > 6.1) {
+    object.material = object.material.clone();
+    object.material.color.setHex(0x9ca39a);
+    object.material.emissive.setHex(0x292d2a);
+    object.material.emissiveIntensity = .12;
+  }
 });
-// Open the sea door farther so the panel remains at the right edge rather than
-// dividing the room through the center of the initial painting composition.
 const seaDoor = fidelity.group.children.find((child) =>
   child.isGroup && Math.abs(child.position.x - 5.0) < .08 && Math.abs(child.position.z + 5.18) < .08
 );
 if (seaDoor) seaDoor.rotation.y = -.96;
 
-const ambient = new THREE.HemisphereLight(0xd7edf0, 0x6e6d57, 1.12); scene.add(ambient);
+const ambient = new THREE.HemisphereLight(0xd7edf0, 0x6e6d57, 1.18); scene.add(ambient);
 const sun = new THREE.DirectionalLight(0xfff2bd, 4.8); sun.position.set(11,10,-14); sun.target.position.set(-1.5,1.2,-2.5); sun.castShadow = true;
 sun.shadow.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048); sun.shadow.camera.left=-22; sun.shadow.camera.right=22; sun.shadow.camera.top=18; sun.shadow.camera.bottom=-16; sun.shadow.camera.near=1; sun.shadow.camera.far=70; sun.shadow.bias=-.00028; scene.add(sun,sun.target);
 const oceanFill = new THREE.DirectionalLight(0x5ba5ba, 1.4); oceanFill.position.set(0,4,-18); scene.add(oceanFill);
 const roomBounce = new THREE.PointLight(0xffe7a8, 1.1, 22, 1.7); roomBounce.position.set(1.8,2.6,-2.9); scene.add(roomBounce);
 
 let sunlightOn = true, autoOrbit = false, tween = null;
-const compositionTarget = new THREE.Vector3(.4,2.55,-1.9);
-const desktopComposition = new THREE.Vector3(-1.3,3.7,10.5);
+const compositionTarget = new THREE.Vector3(.35,2.5,-2.0);
+const desktopComposition = new THREE.Vector3(.65,3.62,10.75);
 function compositionPose(){const aspect=innerWidth/innerHeight;const factor=aspect<.72?1.58:aspect<1.05?1.32:aspect<1.42?1.12:1;return compositionTarget.clone().add(desktopComposition.clone().sub(compositionTarget).multiplyScalar(factor));}
 function ease(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
 function moveCamera(destination,targetDestination=compositionTarget,duration=prefersReducedMotion?1:850){tween={start:performance.now(),duration,fromPos:camera.position.clone(),toPos:destination.clone(),fromTarget:controls.target.clone(),toTarget:targetDestination.clone()};}
