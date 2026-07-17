@@ -63,15 +63,17 @@ const frontFill=new THREE.DirectionalLight(0xc7c5af,.96);frontFill.position.set(
 frontFill.shadow.mapSize.set(isMobile?1024:2048,isMobile?1024:2048);frontFill.shadow.camera.left=-20;frontFill.shadow.camera.right=20;frontFill.shadow.camera.top=15;frontFill.shadow.camera.bottom=-12;frontFill.shadow.bias=-.00035;scene.add(frontFill);
 const sideFill=new THREE.DirectionalLight(0x87978a,.48);sideFill.position.set(12,5,-8);scene.add(sideFill);
 
+// On portrait screens the camera stays near the painted station and opens its FOV;
+// moving far down the entrance corridor made the figures readable only after zooming.
 const compositionPresets={
   wide:{position:[0,4.45,16.6],target:[0,2.55,-2.4],fov:39},
-  square:{position:[0,5.05,22.6],target:[0,2.65,-2.7],fov:47},
-  portrait:{position:[0,5.45,28.4],target:[0,2.72,-2.9],fov:52}
+  square:{position:[0,4.75,18.2],target:[0,2.62,-2.65],fov:57},
+  portrait:{position:[0,4.9,19.2],target:[0,2.68,-2.8],fov:70}
 };
 const overviewPresets={
   wide:{position:[12.5,8.2,19.5],target:[0,2.65,-3.2],fov:43},
-  square:{position:[15.5,10.2,27.0],target:[0,2.75,-3.8],fov:49},
-  portrait:{position:[16.5,11.2,33.0],target:[0,2.85,-4.2],fov:53}
+  square:{position:[13.8,9.4,21.5],target:[0,2.75,-3.8],fov:57},
+  portrait:{position:[14.2,10.0,23.2],target:[0,2.85,-4.2],fov:66}
 };
 function viewportMode(){const aspect=innerWidth/innerHeight;return aspect<.72?'portrait':aspect<1.18?'square':'wide';}
 function presetFor(collection){return collection[viewportMode()];}
