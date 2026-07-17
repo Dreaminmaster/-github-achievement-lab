@@ -38,6 +38,7 @@ const files = [
   'scenes/the-subway/styles.css',
   'scenes/the-subway/src/app.js',
   'scenes/the-subway/src/fidelity.js',
+  'scenes/the-subway/src/fidelity-details.js',
   'scenes/the-subway/src/rebuild-app.js',
   'scenes/the-subway/src/composition-fix.js',
   'vendor/three/three.module.min.js',
@@ -100,6 +101,7 @@ const requiredMarkers = [
   'last-supper-fidelity-rebuild',
   'last-supper-detail-layer',
   'the-subway-fidelity-rebuild',
+  'connected-entry-concourse',
   'portalFrame',
   'rebuildRooms',
   'rebuildLastSupper',
@@ -141,8 +143,8 @@ if (!content['scenes/rooms-by-the-sea/src/app.js'].includes("./fidelity.js") || 
 if (!content['scenes/last-supper/index.html'].includes('./src/rebuild-app.js') || !content['scenes/last-supper/index.html'].includes('./src/fidelity-details.js') || !content['scenes/last-supper/index.html'].includes('./src/composition-fix.js') || !content['scenes/last-supper/src/rebuild-app.js'].includes("./fidelity.js") || !content['scenes/last-supper/src/rebuild-app.js'].includes('../../../shared/safe-composition.js') || !content['scenes/last-supper/src/rebuild-app.js'].includes('allowRelocation: false') || !content['scenes/last-supper/src/rebuild-app.js'].includes('compositionPresets') || !content['scenes/last-supper/src/rebuild-app.js'].includes('overviewPresets')) {
   throw new Error('The Last Supper does not use its detail layer, composition correction, and anchored camera presets.');
 }
-if (!content['scenes/the-subway/index.html'].includes('./src/rebuild-app.js') || !content['scenes/the-subway/index.html'].includes('./src/composition-fix.js') || !content['scenes/the-subway/src/rebuild-app.js'].includes("./fidelity.js") || !content['scenes/the-subway/src/rebuild-app.js'].includes('../../../shared/safe-composition.js') || !content['scenes/the-subway/src/rebuild-app.js'].includes('allowRelocation:false') || !content['scenes/the-subway/src/rebuild-app.js'].includes('compositionPresets') || !content['scenes/the-subway/src/rebuild-app.js'].includes('overviewPresets')) {
-  throw new Error('The Subway does not use its open station rebuild and anchored camera presets.');
+if (!content['scenes/the-subway/index.html'].includes('./src/rebuild-app.js') || !content['scenes/the-subway/index.html'].includes('./src/fidelity-details.js') || !content['scenes/the-subway/index.html'].includes('./src/composition-fix.js') || !content['scenes/the-subway/src/rebuild-app.js'].includes("./fidelity.js") || !content['scenes/the-subway/src/rebuild-app.js'].includes('../../../shared/safe-composition.js') || !content['scenes/the-subway/src/rebuild-app.js'].includes('allowRelocation:false') || !content['scenes/the-subway/src/rebuild-app.js'].includes('compositionPresets') || !content['scenes/the-subway/src/rebuild-app.js'].includes('overviewPresets')) {
+  throw new Error('The Subway does not use its connected entry concourse and anchored camera presets.');
 }
 
 for (const path of requiredScenes.values()) {
@@ -163,6 +165,6 @@ for (const token of ['海边的房间', 'rooms-by-the-sea', '最后的晚餐', '
 }
 
 const total = (await Promise.all(files.map(async (path) => (await stat(new URL(path, root))).size))).reduce((a, b) => a + b, 0);
-if (total < 680000) throw new Error(`Site source is unexpectedly small: ${total} bytes.`);
+if (total < 690000) throw new Error(`Site source is unexpectedly small: ${total} bytes.`);
 
 console.log(`Validated ${files.length} files, ${manifest.scenes.length} scenes, ${requiredMarkers.length} anchored-camera and fidelity markers, and ${total} bytes.`);
