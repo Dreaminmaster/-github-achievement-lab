@@ -112,15 +112,17 @@ const tableFill = new THREE.PointLight(0xffc98e, 1.12, 26, 1.8);
 tableFill.position.set(0, 5.2, -1.4);
 scene.add(tableFill);
 
+// Portrait framing stays inside the open front of the refectory. A wider FOV, not
+// an extreme backwards move through the south wall, fits the thirteen figures.
 const compositionPresets = {
   wide: { position: [0, 5.25, 18.6], target: [0, 3.0, -3.6], fov: 37 },
-  square: { position: [0, 5.75, 24.4], target: [0, 3.08, -3.8], fov: 45 },
-  portrait: { position: [0, 6.05, 31.2], target: [0, 3.15, -3.9], fov: 50 }
+  square: { position: [0, 5.4, 18.9], target: [0, 3.08, -3.8], fov: 58 },
+  portrait: { position: [0, 5.55, 19.2], target: [0, 3.15, -3.9], fov: 75 }
 };
 const overviewPresets = {
   wide: { position: [14.5, 9.4, 21.0], target: [0, 3.2, -4.4], fov: 42 },
-  square: { position: [17.5, 11.5, 29.0], target: [0, 3.3, -4.8], fov: 47 },
-  portrait: { position: [18.5, 12.5, 36.0], target: [0, 3.4, -5.0], fov: 52 }
+  square: { position: [15.5, 10.8, 22.0], target: [0, 3.3, -4.8], fov: 58 },
+  portrait: { position: [15.8, 11.4, 22.8], target: [0, 3.4, -5.0], fov: 70 }
 };
 function viewportMode() { const aspect = innerWidth / innerHeight; return aspect < .72 ? 'portrait' : aspect < 1.18 ? 'square' : 'wide'; }
 function presetFor(collection) { return collection[viewportMode()]; }
