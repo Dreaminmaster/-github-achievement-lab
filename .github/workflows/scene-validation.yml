@@ -73,25 +73,19 @@ jobs:
             fi
             if ! grep -q '<canvas' "$output"; then
               echo "${slug}: no WebGL canvas"
-              tail -n 60 "$output"
-              cat "$errors"
               failed=1
             fi
             if ! grep -q 'class="loading done"' "$output"; then
               echo "${slug}: loading did not finish"
-              grep -o 'class="loading[^"]*"' "$output" | tail -n 5 || true
-              cat "$errors"
               failed=1
             fi
             if ! grep -q 'data-composition-ready="true"' "$output"; then
               echo "${slug}: composition return did not finish"
-              grep -o 'data-composition-[^ ]*' "$output" | head -n 10 || true
-              cat "$errors"
+              grep -o 'data-composition-[^ >]*' "$output" | head -n 10 || true
               failed=1
             fi
             if grep -q 'class="loading failed"' "$output"; then
               echo "${slug}: runtime entered failure state"
-              cat "$errors"
               failed=1
             fi
           }
@@ -100,6 +94,18 @@ jobs:
           verify_scene last-supper
           verify_scene the-subway
           exit "$failed"
+
+      - name: Upload composition diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: composition-diagnostics
+          path: |
+            /tmp/*.html
+            /tmp/*.errors
+            /tmp/painted-worlds-server.log
+          if-no-files-found: warn
+          retention-days: 3
 
       - name: Capture post-click desktop and mobile composition screenshots
         run: |
