@@ -120,10 +120,10 @@ const requiredMarkers = [
   'compositionReady',
   'verifyComposition',
   'beginFreeInteraction',
-  'Exercise composition return in every scene',
-  'Verify stationary mobile touch stability',
+  'Verify initial anchored composition in every scene',
+  'Verify stationary touch and real composition return',
   'mobile-tap-stability.mjs',
-  'Capture post-click desktop and mobile composition screenshots',
+  'Capture desktop and mobile composition screenshots',
   '390,844',
   'loading-error-message'
 ];
