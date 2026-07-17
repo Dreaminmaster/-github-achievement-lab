@@ -15,8 +15,8 @@ const isMobile = matchMedia('(max-width: 760px)').matches || navigator.maxTouchP
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xb7d6df);
 scene.fog = new THREE.Fog(0xb7d6df, 38, 105);
-const camera = new THREE.PerspectiveCamera(41, innerWidth / innerHeight, .06, 220);
-camera.position.set(1.4, 3.65, 9.6);
+const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, .06, 220);
+camera.position.set(-1.3, 3.7, 10.5);
 const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: 'high-performance', alpha: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.35 : 2));
 renderer.setSize(innerWidth, innerHeight);
@@ -39,7 +39,7 @@ controls.minDistance = 2.6;
 controls.maxDistance = 76;
 controls.minPolarAngle = .18;
 controls.maxPolarAngle = 1.54;
-controls.target.set(.3, 2.6, -2.0);
+controls.target.set(.4, 2.55, -1.9);
 controls.touches.ONE = THREE.TOUCH.ROTATE;
 controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
@@ -80,21 +80,31 @@ const wallSun = shapeMesh([[-5.98,.22],[1.9,.22],[1.9,5.98],[-1.05,5.98]], mats.
 const floorSun = shapeMesh([[-5.95,5.8],[5.75,5.8],[4.55,-4.85],[-2.35,-4.85]], mats.sun, [0,.018,0], [-Math.PI/2,0,0]);
 
 const fidelity = rebuildRooms({ THREE, scene, world, makeMaterial, box, cylinder, shapeMesh, isMobile, renderer });
-// The pitched roof belongs outside the crop. Raise its dark exterior surfaces so they
-// no longer intrude into the bright room when viewed from the painting camera.
 fidelity.group.traverse((object) => {
-  if (object.isMesh && object.material?.color?.getHex?.() === 0x565c58) object.position.y += 2.5;
+  if (!object.isMesh || !object.material?.color) return;
+  const color = object.material.color.getHex();
+  if (color === 0x565c58) object.position.y += 2.5;
+  if (color === 0xd8d3c2) {
+    object.material.emissive = new THREE.Color(0x3b382e);
+    object.material.emissiveIntensity = .16;
+  }
 });
+// Open the sea door farther so the panel remains at the right edge rather than
+// dividing the room through the center of the initial painting composition.
+const seaDoor = fidelity.group.children.find((child) =>
+  child.isGroup && Math.abs(child.position.x - 5.0) < .08 && Math.abs(child.position.z + 5.18) < .08
+);
+if (seaDoor) seaDoor.rotation.y = -.96;
 
-const ambient = new THREE.HemisphereLight(0xd7edf0, 0x6e6d57, 1.05); scene.add(ambient);
+const ambient = new THREE.HemisphereLight(0xd7edf0, 0x6e6d57, 1.12); scene.add(ambient);
 const sun = new THREE.DirectionalLight(0xfff2bd, 4.8); sun.position.set(11,10,-14); sun.target.position.set(-1.5,1.2,-2.5); sun.castShadow = true;
 sun.shadow.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048); sun.shadow.camera.left=-22; sun.shadow.camera.right=22; sun.shadow.camera.top=18; sun.shadow.camera.bottom=-16; sun.shadow.camera.near=1; sun.shadow.camera.far=70; sun.shadow.bias=-.00028; scene.add(sun,sun.target);
 const oceanFill = new THREE.DirectionalLight(0x5ba5ba, 1.4); oceanFill.position.set(0,4,-18); scene.add(oceanFill);
 const roomBounce = new THREE.PointLight(0xffe7a8, 1.1, 22, 1.7); roomBounce.position.set(1.8,2.6,-2.9); scene.add(roomBounce);
 
 let sunlightOn = true, autoOrbit = false, tween = null;
-const compositionTarget = new THREE.Vector3(.3,2.6,-2.0);
-const desktopComposition = new THREE.Vector3(1.4,3.65,9.6);
+const compositionTarget = new THREE.Vector3(.4,2.55,-1.9);
+const desktopComposition = new THREE.Vector3(-1.3,3.7,10.5);
 function compositionPose(){const aspect=innerWidth/innerHeight;const factor=aspect<.72?1.58:aspect<1.05?1.32:aspect<1.42?1.12:1;return compositionTarget.clone().add(desktopComposition.clone().sub(compositionTarget).multiplyScalar(factor));}
 function ease(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
 function moveCamera(destination,targetDestination=compositionTarget,duration=prefersReducedMotion?1:850){tween={start:performance.now(),duration,fromPos:camera.position.clone(),toPos:destination.clone(),fromTarget:controls.target.clone(),toTarget:targetDestination.clone()};}
@@ -111,7 +121,7 @@ renderer.domElement.addEventListener('pointermove',(event)=>{const start=pointer
 function finishPointer(event){const start=pointerStarts.get(event.pointerId);const hadMultiple=multiTouchGesture;activePointers.delete(event.pointerId);pointerStarts.delete(event.pointerId);if(activePointers.size===0)multiTouchGesture=false;if(!start||event.pointerType==='mouse'||hadMultiple||start.moved)return;if(performance.now()-start.time>320)return;const now=performance.now();if(now-lastSingleTap<340){lastSingleTap=-Infinity;returnToComposition();}else lastSingleTap=now;}
 renderer.domElement.addEventListener('pointerup',finishPointer,{passive:true}); renderer.domElement.addEventListener('pointercancel',finishPointer,{passive:true}); renderer.domElement.addEventListener('dblclick',returnToComposition);
 
-function resize(){camera.aspect=innerWidth/innerHeight;camera.fov=camera.aspect<.72?51:camera.aspect<1.05?46:41;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile?1.35:2));}
+function resize(){camera.aspect=innerWidth/innerHeight;camera.fov=camera.aspect<.72?50:camera.aspect<1.05?45:40;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile?1.35:2));}
 addEventListener('resize',resize,{passive:true});
 const clock=new THREE.Clock();
 function animate(now){const elapsed=clock.getElapsedTime();oceanUniforms.uTime.value=prefersReducedMotion?0:elapsed;fidelity.update(elapsed,prefersReducedMotion);if(tween){const progress=Math.min(1,(now-tween.start)/tween.duration);const eased=ease(progress);camera.position.lerpVectors(tween.fromPos,tween.toPos,eased);controls.target.lerpVectors(tween.fromTarget,tween.toTarget,eased);if(progress>=1)tween=null;}if(!prefersReducedMotion&&sunlightOn)roomBounce.intensity=1.1+Math.sin(elapsed*.32)*.025;controls.update();renderer.render(scene,camera);}
