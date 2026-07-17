@@ -70,10 +70,10 @@ const wallSun = shapeMesh([[-5.98,.22],[1.9,.22],[1.9,5.98],[-1.05,5.98]], mats.
 const floorSun = shapeMesh([[-5.95,5.8],[5.75,5.8],[4.55,-4.85],[-2.35,-4.85]], mats.sun, [0,.018,0], [-Math.PI/2,0,0]);
 
 const fidelity = rebuildRooms({ THREE, scene, world, makeMaterial, box, cylinder, shapeMesh, isMobile, renderer });
-fidelity.group.traverse((object) => { if (!object.isMesh || !object.material?.color) return; const color = object.material.color.getHex(); if (color === 0x565c58) object.position.y += 2.5; if (color === 0xd8d3c2) { object.material.emissive = new THREE.Color(0x3b382e); object.material.emissiveIntensity = .16; } if (color === 0xd6cfb9 && object.position.y > 6.1) { object.material = object.material.clone(); object.material.color.setHex(0x9ca39a); object.material.emissive.setHex(0x292d2a); object.material.emissiveIntensity = .12; } });
+fidelity.group.traverse((object) => { if (!object.isMesh || !object.material?.color) return; const color = object.material.color.getHex(); if (color === 0xd8d3c2) { object.material.emissive = new THREE.Color(0x3b382e); object.material.emissiveIntensity = .16; } if (color === 0xd6cfb9 && object.position.y > 6.1) { object.material = object.material.clone(); object.material.color.setHex(0x9ca39a); object.material.emissive.setHex(0x292d2a); object.material.emissiveIntensity = .12; } });
 const seaDoor = fidelity.group.children.find((child) => child.isGroup && Math.abs(child.position.x - 5.0) < .08 && Math.abs(child.position.z + 5.18) < .08);
 if (seaDoor) seaDoor.rotation.y = -.96;
-const compositionSafety = createSafeComposition({ THREE, root: fidelity.group, targetTolerance: 1.2 });
+const compositionSafety = createSafeComposition({ THREE, root: fidelity.group, allowRelocation: false });
 
 const ambient = new THREE.HemisphereLight(0xd7edf0, 0x6e6d57, 1.18); scene.add(ambient);
 const sun = new THREE.DirectionalLight(0xfff2bd, 4.8); sun.position.set(11,10,-14); sun.target.position.set(-1.5,1.2,-2.5); sun.castShadow = true;
@@ -81,31 +81,40 @@ sun.shadow.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048); sun.shad
 const oceanFill = new THREE.DirectionalLight(0x5ba5ba, 1.4); oceanFill.position.set(0,4,-18); scene.add(oceanFill);
 const roomBounce = new THREE.PointLight(0xffe7a8, 1.1, 22, 1.7); roomBounce.position.set(1.8,2.6,-2.9); scene.add(roomBounce);
 
-const compositionPresets = { wide: { position: [0.65, 3.62, 10.15], target: [0.35, 2.5, -2.0], fov: 40 }, square: { position: [-0.35, 3.58, 11.7], target: [0.55, 2.52, -2.1], fov: 50 }, portrait: { position: [-1.25, 3.5, 13.35], target: [0.75, 2.5, -2.3], fov: 60 } };
-const overviewPresets = { wide: { position: [11.8, 7.8, 14.2], target: [0.4, 2.4, -1.3], fov: 43 }, square: { position: [12.8, 8.5, 18.5], target: [0.4, 2.5, -1.5], fov: 48 }, portrait: { position: [12.5, 9.2, 23.0], target: [0.5, 2.6, -1.8], fov: 53 } };
+const compositionPresets = {
+  wide: { position: [0.15, 3.42, 7.35], target: [0.8, 2.52, -2.55], fov: 39 },
+  square: { position: [-0.35, 3.38, 7.55], target: [0.95, 2.52, -2.75], fov: 50 },
+  portrait: { position: [-0.9, 3.34, 7.72], target: [1.15, 2.52, -2.95], fov: 62 }
+};
+const overviewPresets = {
+  wide: { position: [11.8, 7.8, 14.2], target: [0.4, 2.4, -1.3], fov: 43 },
+  square: { position: [12.8, 8.5, 18.5], target: [0.4, 2.5, -1.5], fov: 48 },
+  portrait: { position: [12.5, 9.2, 23.0], target: [0.5, 2.6, -1.8], fov: 53 }
+};
 function viewportMode() { const aspect = innerWidth / innerHeight; return aspect < .72 ? 'portrait' : aspect < 1.18 ? 'square' : 'wide'; }
 function presetFor(collection) { return collection[viewportMode()]; }
 let sunlightOn = true, autoOrbit = false, tween = null, viewMode = 'composition';
 function ease(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
 function moveCamera(preset, duration = prefersReducedMotion ? 1 : 900) { document.documentElement.dataset.compositionReady = 'false'; const toPos = new THREE.Vector3(...preset.position), toTarget = new THREE.Vector3(...preset.target); tween = { start: performance.now(), duration, fromPos: camera.position.clone(), toPos, fromTarget: controls.target.clone(), toTarget, fromFov: camera.fov, toFov: preset.fov }; }
-function stopAutomatedMotion(){ tween=null; compositionSafety.exit(); if(autoOrbit){autoOrbit=false;controls.autoRotate=false;exploreButton.setAttribute('aria-pressed','false');} viewMode='free'; compositionButton.classList.remove('primary'); }
-function returnToComposition(){ autoOrbit=false;controls.autoRotate=false;exploreButton.setAttribute('aria-pressed','false'); viewMode='composition';compositionButton.classList.add('primary');moveCamera(compositionSafety.resolve(presetFor(compositionPresets))); }
-compositionButton.addEventListener('click',returnToComposition); resetButton.addEventListener('click',returnToComposition);
-exploreButton.addEventListener('click',()=>{ tween=null; compositionSafety.exit(); autoOrbit=!autoOrbit; controls.autoRotate=autoOrbit; controls.autoRotateSpeed=.2; exploreButton.setAttribute('aria-pressed',String(autoOrbit)); compositionButton.classList.toggle('primary',!autoOrbit); if(autoOrbit){viewMode='overview';moveCamera(presetFor(overviewPresets));}else viewMode='free'; });
+function beginFreeInteraction(){ if(viewMode==='free'&&!autoOrbit)return; tween=null;compositionSafety.exit();if(autoOrbit){autoOrbit=false;controls.autoRotate=false;exploreButton.setAttribute('aria-pressed','false');}viewMode='free';compositionButton.classList.remove('primary');document.documentElement.dataset.compositionReady='false'; }
+function returnToComposition(){autoOrbit=false;controls.autoRotate=false;exploreButton.setAttribute('aria-pressed','false');viewMode='composition';compositionButton.classList.add('primary');moveCamera(compositionSafety.resolve(presetFor(compositionPresets)));}
+compositionButton.addEventListener('click',returnToComposition);
+resetButton.addEventListener('click',returnToComposition);
+exploreButton.addEventListener('click',()=>{tween=null;compositionSafety.exit();autoOrbit=!autoOrbit;controls.autoRotate=autoOrbit;controls.autoRotateSpeed=.2;exploreButton.setAttribute('aria-pressed',String(autoOrbit));compositionButton.classList.toggle('primary',!autoOrbit);if(autoOrbit){viewMode='overview';moveCamera(presetFor(overviewPresets));}else viewMode='free';});
 lightButton.addEventListener('click',()=>{sunlightOn=!sunlightOn;lightButton.setAttribute('aria-pressed',String(sunlightOn));sun.visible=sunlightOn;wallSun.visible=sunlightOn;floorSun.visible=sunlightOn;fidelity.sunLayers.visible=sunlightOn;roomBounce.visible=sunlightOn;renderer.toneMappingExposure=sunlightOn?1.08:.82;});
-controls.addEventListener('start',()=>{hint.classList.add('hidden');stopAutomatedMotion();});
+controls.addEventListener('start',()=>hint.classList.add('hidden'));
 
 const activePointers=new Set(), pointerStarts=new Map(); let multiTouchGesture=false,lastSingleTap=-Infinity;
-renderer.domElement.addEventListener('pointerdown',(event)=>{activePointers.add(event.pointerId);pointerStarts.set(event.pointerId,{x:event.clientX,y:event.clientY,time:performance.now()});if(activePointers.size>1)multiTouchGesture=true;stopAutomatedMotion();hint.classList.add('hidden');},{passive:true});
-renderer.domElement.addEventListener('pointermove',(event)=>{const start=pointerStarts.get(event.pointerId);if(start&&Math.hypot(event.clientX-start.x,event.clientY-start.y)>10)start.moved=true;},{passive:true});
+renderer.domElement.addEventListener('pointerdown',(event)=>{activePointers.add(event.pointerId);pointerStarts.set(event.pointerId,{x:event.clientX,y:event.clientY,time:performance.now(),moved:false});if(activePointers.size>1){multiTouchGesture=true;beginFreeInteraction();}hint.classList.add('hidden');},{passive:true});
+renderer.domElement.addEventListener('pointermove',(event)=>{const start=pointerStarts.get(event.pointerId);if(!start||start.moved)return;if(Math.hypot(event.clientX-start.x,event.clientY-start.y)>12){start.moved=true;beginFreeInteraction();}},{passive:true});
 function finishPointer(event){const start=pointerStarts.get(event.pointerId);const hadMultiple=multiTouchGesture;activePointers.delete(event.pointerId);pointerStarts.delete(event.pointerId);if(activePointers.size===0)multiTouchGesture=false;if(!start||event.pointerType==='mouse'||hadMultiple||start.moved)return;if(performance.now()-start.time>320)return;const now=performance.now();if(now-lastSingleTap<340){lastSingleTap=-Infinity;returnToComposition();}else lastSingleTap=now;}
-renderer.domElement.addEventListener('pointerup',finishPointer,{passive:true});renderer.domElement.addEventListener('pointercancel',finishPointer,{passive:true});renderer.domElement.addEventListener('dblclick',returnToComposition);
+renderer.domElement.addEventListener('pointerup',finishPointer,{passive:true});renderer.domElement.addEventListener('pointercancel',finishPointer,{passive:true});renderer.domElement.addEventListener('dblclick',returnToComposition);renderer.domElement.addEventListener('wheel',beginFreeInteraction,{passive:true});
 
-function applyPresetImmediately(preset){camera.position.set(...preset.position);controls.target.set(...preset.target);camera.fov=preset.fov;camera.updateProjectionMatrix();controls.update();}
+function applyPresetImmediately(preset){camera.position.set(...preset.position);controls.target.set(...preset.target);camera.fov=preset.fov;camera.updateProjectionMatrix();controls.update();controls.saveState?.();}
 function resize(){camera.aspect=innerWidth/innerHeight;if(viewMode==='composition'&&!tween)applyPresetImmediately(compositionSafety.resolve(presetFor(compositionPresets)));else if(viewMode==='overview'&&!tween)applyPresetImmediately(presetFor(overviewPresets));else camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile?1.35:2));}
 addEventListener('resize',resize,{passive:true});
 const clock=new THREE.Clock();
-function animate(now){const elapsed=clock.getElapsedTime();oceanUniforms.uTime.value=prefersReducedMotion?0:elapsed;fidelity.update(elapsed,prefersReducedMotion);if(tween){const progress=Math.min(1,(now-tween.start)/tween.duration);const eased=ease(progress);camera.position.lerpVectors(tween.fromPos,tween.toPos,eased);controls.target.lerpVectors(tween.fromTarget,tween.toTarget,eased);camera.fov=THREE.MathUtils.lerp(tween.fromFov,tween.toFov,eased);camera.updateProjectionMatrix();if(progress>=1){tween=null;if(viewMode==='composition')document.documentElement.dataset.compositionReady='true';}}if(!prefersReducedMotion&&sunlightOn)roomBounce.intensity=1.1+Math.sin(elapsed*.32)*.025;controls.update();renderer.render(scene,camera);}
+function animate(now){const elapsed=clock.getElapsedTime();oceanUniforms.uTime.value=prefersReducedMotion?0:elapsed;fidelity.update(elapsed,prefersReducedMotion);if(tween){const progress=Math.min(1,(now-tween.start)/tween.duration);const eased=ease(progress);camera.position.lerpVectors(tween.fromPos,tween.toPos,eased);controls.target.lerpVectors(tween.fromTarget,tween.toTarget,eased);camera.fov=THREE.MathUtils.lerp(tween.fromFov,tween.toFov,eased);camera.updateProjectionMatrix();if(progress>=1){tween=null;controls.update();controls.saveState?.();if(viewMode==='composition')document.documentElement.dataset.compositionReady='true';}}if(!prefersReducedMotion&&sunlightOn)roomBounce.intensity=1.1+Math.sin(elapsed*.32)*.025;controls.update();renderer.render(scene,camera);}
 const initialPreset=compositionSafety.resolve(presetFor(compositionPresets));applyPresetImmediately(initialPreset);resize();document.documentElement.dataset.compositionReady='true';
 if(verifyComposition){compositionSafety.exit();viewMode='overview';applyPresetImmediately(presetFor(overviewPresets));setTimeout(returnToComposition,80);}
 renderer.setAnimationLoop(animate);
