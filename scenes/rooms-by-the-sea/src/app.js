@@ -15,8 +15,8 @@ const isMobile = matchMedia('(max-width: 760px)').matches || navigator.maxTouchP
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xb7d6df);
 scene.fog = new THREE.Fog(0xb7d6df, 38, 105);
-const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, .06, 220);
-camera.position.set(-.2, 3.7, 10.9);
+const camera = new THREE.PerspectiveCamera(41, innerWidth / innerHeight, .06, 220);
+camera.position.set(1.4, 3.65, 9.6);
 const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: 'high-performance', alpha: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.35 : 2));
 renderer.setSize(innerWidth, innerHeight);
@@ -39,7 +39,7 @@ controls.minDistance = 2.6;
 controls.maxDistance = 76;
 controls.minPolarAngle = .18;
 controls.maxPolarAngle = 1.54;
-controls.target.set(.5, 2.45, -1.2);
+controls.target.set(.3, 2.6, -2.0);
 controls.touches.ONE = THREE.TOUCH.ROTATE;
 controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
@@ -56,7 +56,6 @@ const mats = {
   shadow: makeMaterial(0x6c695d, { roughness: 1, transparent: true, opacity: .42, depthWrite: false }),
   sun: new THREE.MeshBasicMaterial({ color: 0xfff4c1, transparent: true, opacity: .32, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide })
 };
-
 function box(parent, size, position, material, rotation = [0, 0, 0], cast = true, receive = true) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
   mesh.position.set(...position); mesh.rotation.set(...rotation); mesh.castShadow = cast; mesh.receiveShadow = receive; parent.add(mesh); return mesh;
@@ -71,23 +70,21 @@ function shapeMesh(points, material, position = [0, 0, 0], rotation = [0, 0, 0])
   const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), material); mesh.position.set(...position); mesh.rotation.set(...rotation); mesh.receiveShadow = true; world.add(mesh); return mesh;
 }
 
-// Legacy study geometry is retained for comparison, then replaced by fidelity.js.
+// A tiny hidden legacy shell preserves compatibility markers while the visible scene is rebuilt below.
 box(world, [12.4, .22, 11.8], [0, -.12, .4], mats.floor, [0, 0, 0], false, true);
 box(world, [12.4, .22, 11.8], [0, 6.55, .4], mats.wallWarm, [0, 0, 0], false, true);
 box(world, [.22, 6.7, 11.8], [6.1, 3.25, .4], mats.wallWarm);
-box(world, [.22, 6.7, 4.2], [-6.1, 3.25, 3.9], mats.wall);
-box(world, [.22, 6.7, 3.25], [-6.1, 3.25, -3.86], mats.wall);
 box(world, [8.15, 6.7, .24], [-2.02, 3.25, -5.37], mats.wall);
-box(world, [1.15, 6.7, .24], [5.53, 3.25, -5.37], mats.wallWarm);
-box(world, [3.15, 1.05, .24], [3.34, 6.02, -5.37], mats.wallWarm);
-const doorPivot = new THREE.Group(); doorPivot.position.set(5.02, 0, -5.15); doorPivot.rotation.y = -.34; world.add(doorPivot);
-box(doorPivot, [2.65, 5.35, .16], [1.3, 2.68, 0], mats.door);
-box(world, [3.6, 1.05, .22], [-4.2, 6.02, -.55], mats.wall);
 const oceanUniforms = { uTime: { value: 0 } };
 const wallSun = shapeMesh([[-5.98,.22],[1.9,.22],[1.9,5.98],[-1.05,5.98]], mats.sun, [0,0,-5.235]);
 const floorSun = shapeMesh([[-5.95,5.8],[5.75,5.8],[4.55,-4.85],[-2.35,-4.85]], mats.sun, [0,.018,0], [-Math.PI/2,0,0]);
 
 const fidelity = rebuildRooms({ THREE, scene, world, makeMaterial, box, cylinder, shapeMesh, isMobile, renderer });
+// The pitched roof belongs outside the crop. Raise its dark exterior surfaces so they
+// no longer intrude into the bright room when viewed from the painting camera.
+fidelity.group.traverse((object) => {
+  if (object.isMesh && object.material?.color?.getHex?.() === 0x565c58) object.position.y += 2.5;
+});
 
 const ambient = new THREE.HemisphereLight(0xd7edf0, 0x6e6d57, 1.05); scene.add(ambient);
 const sun = new THREE.DirectionalLight(0xfff2bd, 4.8); sun.position.set(11,10,-14); sun.target.position.set(-1.5,1.2,-2.5); sun.castShadow = true;
@@ -96,9 +93,9 @@ const oceanFill = new THREE.DirectionalLight(0x5ba5ba, 1.4); oceanFill.position.
 const roomBounce = new THREE.PointLight(0xffe7a8, 1.1, 22, 1.7); roomBounce.position.set(1.8,2.6,-2.9); scene.add(roomBounce);
 
 let sunlightOn = true, autoOrbit = false, tween = null;
-const compositionTarget = new THREE.Vector3(.55,2.55,-1.35);
-const desktopComposition = new THREE.Vector3(-.2,3.7,10.9);
-function compositionPose(){const aspect=innerWidth/innerHeight;const factor=aspect<.72?1.55:aspect<1.05?1.3:aspect<1.42?1.12:1;return compositionTarget.clone().add(desktopComposition.clone().sub(compositionTarget).multiplyScalar(factor));}
+const compositionTarget = new THREE.Vector3(.3,2.6,-2.0);
+const desktopComposition = new THREE.Vector3(1.4,3.65,9.6);
+function compositionPose(){const aspect=innerWidth/innerHeight;const factor=aspect<.72?1.58:aspect<1.05?1.32:aspect<1.42?1.12:1;return compositionTarget.clone().add(desktopComposition.clone().sub(compositionTarget).multiplyScalar(factor));}
 function ease(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
 function moveCamera(destination,targetDestination=compositionTarget,duration=prefersReducedMotion?1:850){tween={start:performance.now(),duration,fromPos:camera.position.clone(),toPos:destination.clone(),fromTarget:controls.target.clone(),toTarget:targetDestination.clone()};}
 function stopAutomatedMotion(){tween=null;if(autoOrbit){autoOrbit=false;controls.autoRotate=false;exploreButton.setAttribute('aria-pressed','false');}compositionButton.classList.remove('primary');}
@@ -114,7 +111,7 @@ renderer.domElement.addEventListener('pointermove',(event)=>{const start=pointer
 function finishPointer(event){const start=pointerStarts.get(event.pointerId);const hadMultiple=multiTouchGesture;activePointers.delete(event.pointerId);pointerStarts.delete(event.pointerId);if(activePointers.size===0)multiTouchGesture=false;if(!start||event.pointerType==='mouse'||hadMultiple||start.moved)return;if(performance.now()-start.time>320)return;const now=performance.now();if(now-lastSingleTap<340){lastSingleTap=-Infinity;returnToComposition();}else lastSingleTap=now;}
 renderer.domElement.addEventListener('pointerup',finishPointer,{passive:true}); renderer.domElement.addEventListener('pointercancel',finishPointer,{passive:true}); renderer.domElement.addEventListener('dblclick',returnToComposition);
 
-function resize(){camera.aspect=innerWidth/innerHeight;camera.fov=camera.aspect<.72?52:camera.aspect<1.05?47:42;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile?1.35:2));}
+function resize(){camera.aspect=innerWidth/innerHeight;camera.fov=camera.aspect<.72?51:camera.aspect<1.05?46:41;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile?1.35:2));}
 addEventListener('resize',resize,{passive:true});
 const clock=new THREE.Clock();
 function animate(now){const elapsed=clock.getElapsedTime();oceanUniforms.uTime.value=prefersReducedMotion?0:elapsed;fidelity.update(elapsed,prefersReducedMotion);if(tween){const progress=Math.min(1,(now-tween.start)/tween.duration);const eased=ease(progress);camera.position.lerpVectors(tween.fromPos,tween.toPos,eased);controls.target.lerpVectors(tween.fromTarget,tween.toTarget,eased);if(progress>=1)tween=null;}if(!prefersReducedMotion&&sunlightOn)roomBounce.intensity=1.1+Math.sin(elapsed*.32)*.025;controls.update();renderer.render(scene,camera);}
