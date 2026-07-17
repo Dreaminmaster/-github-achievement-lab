@@ -3,10 +3,15 @@ const {
   loading, hint, compositionButton, exploreButton, lightButton, resetButton
 } = window.NH;
 
-const ambient = new THREE.HemisphereLight(0x789b9d, 0x071012, .43);
+if (scene.fog?.isFogExp2) scene.fog.density = .0094;
+renderer.toneMappingExposure = 1.22;
+mats.glow.emissiveIntensity = 2.65;
+mats.yellowWall.emissiveIntensity = .2;
+
+const ambient = new THREE.HemisphereLight(0x668b90, 0x050b0d, .27);
 scene.add(ambient);
 
-const moon = new THREE.DirectionalLight(0x88b0b3, 1.16);
+const moon = new THREE.DirectionalLight(0x78a4ac, .82);
 moon.position.set(-11, 15, -5);
 moon.castShadow = true;
 moon.shadow.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048);
@@ -19,33 +24,45 @@ moon.shadow.camera.far = 60;
 moon.shadow.bias = -.00028;
 scene.add(moon);
 
-const streetFill = new THREE.DirectionalLight(0x547b7b, .72);
+const streetFill = new THREE.DirectionalLight(0x416b70, .43);
 streetFill.position.set(10, 6, -14);
 scene.add(streetFill);
 
 const interiorLights = new THREE.Group();
 scene.add(interiorLights);
 
-const ceilingFront = new THREE.RectAreaLight(0xfff0a9, 7.2, 10.8, 2.2);
+const ceilingFront = new THREE.RectAreaLight(0xffe79a, 11.0, 11.6, 2.45);
 ceilingFront.position.set(4.4, 4.24, 4.15);
 ceilingFront.rotation.x = -Math.PI / 2;
 interiorLights.add(ceilingFront);
 
-const ceilingBack = new THREE.RectAreaLight(0xffe89a, 5.6, 6.2, 1.8);
+const ceilingBack = new THREE.RectAreaLight(0xffdc82, 8.2, 6.8, 2.0);
 ceilingBack.position.set(6.4, 3.96, 5.7);
 ceilingBack.rotation.x = -Math.PI / 2;
 interiorLights.add(ceilingBack);
 
-const dinerFill = new THREE.PointLight(0xffe7a0, 2.6, 14, 1.45);
-dinerFill.position.set(4.4, 3.35, 4.25);
+const dinerFill = new THREE.PointLight(0xffdda0, 4.5, 16, 1.38);
+dinerFill.position.set(4.4, 3.2, 4.25);
 dinerFill.castShadow = !isMobile;
 interiorLights.add(dinerFill);
 
-const cornerFill = new THREE.PointLight(0xffefaa, 1.6, 9, 1.55);
-cornerFill.position.set(-1.25, 2.8, 4.2);
+const cornerFill = new THREE.PointLight(0xffeaa0, 3.1, 11, 1.5);
+cornerFill.position.set(-1.25, 2.75, 4.2);
 interiorLights.add(cornerFill);
 
-const windowCool = new THREE.PointLight(0x72b0a5, .72, 11, 1.8);
+const counterGlow = new THREE.PointLight(0xffbd67, 2.2, 10, 1.72);
+counterGlow.position.set(6.7, 1.7, 3.65);
+interiorLights.add(counterGlow);
+
+const glassSpillFront = new THREE.PointLight(0xffc875, 2.35, 19, 2.05);
+glassSpillFront.position.set(4.0, 1.25, 1.25);
+interiorLights.add(glassSpillFront);
+
+const glassSpillCorner = new THREE.PointLight(0xffd487, 1.65, 13, 2.0);
+glassSpillCorner.position.set(-2.3, 1.35, 2.55);
+interiorLights.add(glassSpillCorner);
+
+const windowCool = new THREE.PointLight(0x72a9a2, .5, 11, 1.8);
 windowCool.position.set(-2.6, 1.2, 3.4);
 interiorLights.add(windowCool);
 
@@ -58,7 +75,7 @@ for (let i = 0; i < dustCount; i++) {
   dustPositions[i * 3 + 2] = 2.9 + Math.random() * 3.2;
 }
 dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
-const dustMaterial = new THREE.PointsMaterial({ color: 0xffedb1, size: .016, transparent: true, opacity: .24, depthWrite: false, blending: THREE.AdditiveBlending });
+const dustMaterial = new THREE.PointsMaterial({ color: 0xffedb1, size: .016, transparent: true, opacity: .3, depthWrite: false, blending: THREE.AdditiveBlending });
 const dust = new THREE.Points(dustGeometry, dustMaterial);
 diner.add(dust);
 
@@ -70,7 +87,7 @@ let autoOrbit = false;
 
 function compositionPose() {
   const aspect = innerWidth / innerHeight;
-  const factor = aspect < .72 ? 1.72 : aspect < 1.05 ? 1.42 : aspect < 1.42 ? 1.16 : 1;
+  const factor = aspect < .72 ? 1.55 : aspect < 1.05 ? 1.34 : aspect < 1.42 ? 1.12 : 1;
   return compositionTarget.clone().add(desktopComposition.clone().sub(compositionTarget).multiplyScalar(factor));
 }
 
@@ -114,9 +131,9 @@ lightButton.addEventListener('click', () => {
   lightOn = !lightOn;
   lightButton.setAttribute('aria-pressed', String(lightOn));
   interiorLights.visible = lightOn;
-  mats.glow.emissiveIntensity = lightOn ? 1.85 : .08;
-  mats.yellowWall.emissiveIntensity = lightOn ? .12 : .008;
-  renderer.toneMappingExposure = lightOn ? 1.1 : .72;
+  mats.glow.emissiveIntensity = lightOn ? 2.65 : .08;
+  mats.yellowWall.emissiveIntensity = lightOn ? .2 : .008;
+  renderer.toneMappingExposure = lightOn ? 1.22 : .68;
 });
 
 controls.addEventListener('start', () => {
@@ -124,8 +141,6 @@ controls.addEventListener('start', () => {
   stopAutomatedMotion();
 });
 
-// A pinch creates two pointer-up events. Track the full gesture so those events can
-// never be mistaken for a double tap and reset the camera.
 const activePointers = new Set();
 const pointerStarts = new Map();
 let multiTouchGesture = false;
@@ -167,7 +182,7 @@ renderer.domElement.addEventListener('dblclick', returnToComposition);
 
 function resize() {
   camera.aspect = innerWidth / innerHeight;
-  camera.fov = camera.aspect < .72 ? 50 : camera.aspect < 1.05 ? 45 : 38;
+  camera.fov = camera.aspect < .72 ? 49 : camera.aspect < 1.05 ? 44 : 38;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.35 : 2));
@@ -188,8 +203,10 @@ function animate(now) {
     dust.rotation.y = elapsed * .006;
     dust.position.y = Math.sin(elapsed * .18) * .018;
     if (lightOn) {
-      ceilingFront.intensity = 7.2 + Math.sin(elapsed * 1.3) * .035;
-      dinerFill.intensity = 2.6 + Math.sin(elapsed * 1.9) * .018;
+      ceilingFront.intensity = 11.0 + Math.sin(elapsed * 1.3) * .05;
+      ceilingBack.intensity = 8.2 + Math.sin(elapsed * 1.1) * .035;
+      dinerFill.intensity = 4.5 + Math.sin(elapsed * 1.9) * .03;
+      counterGlow.intensity = 2.2 + Math.sin(elapsed * 1.55) * .025;
     }
   }
   controls.update();

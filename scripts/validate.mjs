@@ -9,6 +9,7 @@ const files = [
   'scenes/README.md',
   'scenes/manifest.json',
   'shared/scene-selector.js',
+  '.github/workflows/scene-validation.yml',
   'scenes/nighthawks/index.html',
   'scenes/nighthawks/styles.css',
   'scenes/nighthawks/src/app.js',
@@ -103,6 +104,13 @@ const requiredMarkers = [
   'fidelityDistrict.scale.x = -1',
   'lowered-last-supper-table',
   'visible-left-cubicle-bank',
+  'compositionPresets',
+  'overviewPresets',
+  'zoomToCursor',
+  'glassSpillFront',
+  'glassSpillCorner',
+  'Capture desktop and mobile composition screenshots',
+  '390,844',
   'loading-error-message'
 ];
 const missing = requiredMarkers.filter((token) => !joined.includes(token));
@@ -114,18 +122,24 @@ for (const dependency of ['./core.js', './environment.js', './characters.js', '.
 if (!content['scenes/nighthawks/src/app.js'].includes("../../../src/app.js")) {
   throw new Error('The Nighthawks route is not connected to the rebuilt scene runtime.');
 }
-if (!content['scenes/rooms-by-the-sea/src/app.js'].includes("./fidelity.js")) {
-  throw new Error('Rooms by the Sea does not load its fidelity rebuild.');
+if (!content['scenes/rooms-by-the-sea/src/app.js'].includes("./fidelity.js") ||
+    !content['scenes/rooms-by-the-sea/src/app.js'].includes('compositionPresets') ||
+    !content['scenes/rooms-by-the-sea/src/app.js'].includes('overviewPresets')) {
+  throw new Error('Rooms by the Sea does not load its fidelity rebuild and adaptive camera presets.');
 }
 if (!content['scenes/last-supper/index.html'].includes('./src/rebuild-app.js') ||
     !content['scenes/last-supper/index.html'].includes('./src/composition-fix.js') ||
-    !content['scenes/last-supper/src/rebuild-app.js'].includes("./fidelity.js")) {
-  throw new Error('The Last Supper does not use its fidelity runtime and composition correction.');
+    !content['scenes/last-supper/src/rebuild-app.js'].includes("./fidelity.js") ||
+    !content['scenes/last-supper/src/rebuild-app.js'].includes('compositionPresets') ||
+    !content['scenes/last-supper/src/rebuild-app.js'].includes('overviewPresets')) {
+  throw new Error('The Last Supper does not use its fidelity runtime, composition correction, and adaptive camera presets.');
 }
 if (!content['scenes/the-subway/index.html'].includes('./src/rebuild-app.js') ||
     !content['scenes/the-subway/index.html'].includes('./src/composition-fix.js') ||
-    !content['scenes/the-subway/src/rebuild-app.js'].includes("./fidelity.js")) {
-  throw new Error('The Subway does not use its fidelity runtime and composition correction.');
+    !content['scenes/the-subway/src/rebuild-app.js'].includes("./fidelity.js") ||
+    !content['scenes/the-subway/src/rebuild-app.js'].includes('compositionPresets') ||
+    !content['scenes/the-subway/src/rebuild-app.js'].includes('overviewPresets')) {
+  throw new Error('The Subway does not use its fidelity runtime, composition correction, and adaptive camera presets.');
 }
 
 for (const path of requiredScenes.values()) {
@@ -150,4 +164,4 @@ for (const token of ['海边的房间', 'rooms-by-the-sea', '最后的晚餐', '
 const total = (await Promise.all(files.map(async (path) => (await stat(new URL(path, root))).size))).reduce((a, b) => a + b, 0);
 if (total < 650000) throw new Error(`Site source is unexpectedly small: ${total} bytes.`);
 
-console.log(`Validated ${files.length} files, ${manifest.scenes.length} scenes, ${requiredMarkers.length} fidelity markers, and ${total} bytes.`);
+console.log(`Validated ${files.length} files, ${manifest.scenes.length} scenes, ${requiredMarkers.length} fidelity and camera markers, and ${total} bytes.`);
