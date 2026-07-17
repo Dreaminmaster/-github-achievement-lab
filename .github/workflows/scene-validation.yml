@@ -44,15 +44,17 @@ jobs:
           cat /tmp/painted-worlds-server.log
           exit 1
 
-      - name: Browser smoke test all scenes
+      - name: Exercise composition return in every scene
         run: |
-          set -euo pipefail
+          set -uo pipefail
           chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
+          failed=0
           verify_scene() {
             slug="$1"
             output="/tmp/${slug}.html"
             errors="/tmp/${slug}.errors"
-            timeout 70s "$chrome" \
+            echo "--- verifying ${slug} ---"
+            if ! timeout 70s "$chrome" \
               --headless=new \
               --no-sandbox \
               --disable-dev-shm-usage \
@@ -61,22 +63,38 @@ jobs:
               --enable-unsafe-swiftshader \
               --enable-webgl \
               --ignore-gpu-blocklist \
-              --virtual-time-budget=24000 \
-              --dump-dom "http://127.0.0.1:4173/scenes/${slug}/?ci=1" \
-              > "$output" 2> "$errors"
-            grep -q '<canvas' "$output"
-            grep -q 'class="loading done"' "$output"
-            if grep -q 'class="loading failed"' "$output"; then
-              cat "$errors"
-              exit 1
+              --force-prefers-reduced-motion \
+              --virtual-time-budget=26000 \
+              --dump-dom "http://127.0.0.1:4173/scenes/${slug}/?ci=1&verifyComposition=1" \
+              > "$output" 2> "$errors"; then
+              echo "${slug}: Chrome failed"
+              failed=1
+              return
             fi
+            grep -q '<canvas' "$output" || { echo "${slug}: no WebGL canvas"; failed=1; }
+            grep -q 'class="loading done"' "$output" || { echo "${slug}: loading did not finish"; failed=1; }
+            grep -q 'data-composition-ready="true"' "$output" || { echo "${slug}: composition return did not finish"; failed=1; }
+            if grep -q 'class="loading failed"' "$output"; then echo "${slug}: runtime entered failure state"; failed=1; fi
           }
           verify_scene nighthawks
           verify_scene rooms-by-the-sea
           verify_scene last-supper
           verify_scene the-subway
+          exit "$failed"
 
-      - name: Capture desktop and mobile composition screenshots
+      - name: Upload composition diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: composition-diagnostics
+          path: |
+            /tmp/*.html
+            /tmp/*.errors
+            /tmp/painted-worlds-server.log
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Capture post-click desktop and mobile composition screenshots
         run: |
           set -euo pipefail
           mkdir -p /tmp/scene-screenshots/desktop /tmp/scene-screenshots/mobile
@@ -94,11 +112,12 @@ jobs:
               --enable-unsafe-swiftshader \
               --enable-webgl \
               --ignore-gpu-blocklist \
+              --force-prefers-reduced-motion \
               --hide-scrollbars \
               --window-size="$viewport" \
-              --virtual-time-budget=24000 \
+              --virtual-time-budget=26000 \
               --screenshot="$output" \
-              "http://127.0.0.1:4173/scenes/${slug}/?screenshot=1"
+              "http://127.0.0.1:4173/scenes/${slug}/?screenshot=1&verifyComposition=1"
             test -s "$output"
           }
           for slug in nighthawks rooms-by-the-sea last-supper the-subway; do
