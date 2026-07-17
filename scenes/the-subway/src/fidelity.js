@@ -25,6 +25,7 @@ export function rebuildSubway(api) {
     skin: makeMaterial(0xc69a7c, { roughness: .92, flatShading: true }),
     skinPale: makeMaterial(0xd2af95, { roughness: .92, flatShading: true }),
     hair: makeMaterial(0x554239, { roughness: 1, flatShading: true }),
+    glass: new THREE.MeshPhysicalMaterial({ color: 0xb7c4bc, roughness: .18, transmission: .22, transparent: true, opacity: .3, side: THREE.DoubleSide, depthWrite: false }),
     shadow: makeMaterial(0x303632, { roughness: 1, transparent: true, opacity: .2, depthWrite: false })
   };
 
@@ -37,6 +38,15 @@ export function rebuildSubway(api) {
       for (let x = -w/2 + .82; x < w/2; x += .82) box(group, [.018,h,d + .025], [x,0,d > 0 ? .012 : 0], mats.tileShade, [0,0,0], false, false);
     }
     return group;
+  }
+
+  function portalFrame(parent, position, rotationY, width, height = 6.2) {
+    const frame = new THREE.Group(); frame.position.set(...position); frame.rotation.y = rotationY; parent.add(frame);
+    box(frame,[.28,height,.34],[-width/2, height/2, 0],mats.tileShade);
+    box(frame,[.28,height,.34],[width/2, height/2, 0],mats.tileShade);
+    box(frame,[width+.28,.42,.34],[0,height-.18,0],mats.tileShade);
+    box(frame,[width+.6,.16,.42],[0,.18,0],mats.green);
+    return frame;
   }
 
   function createGate(parent, position, rotationY, width, height = 5.7, spacing = .52) {
@@ -57,6 +67,7 @@ export function rebuildSubway(api) {
     box(passage,[.28,1.0,length],[-width/2+.18,.92,-length/2],mats.green,[0,0,0],false,true);
     box(passage,[.28,1.0,length],[width/2-.18,.92,-length/2],mats.green,[0,0,0],false,true);
     if (lights) for (let z=-2; z>-length+2; z-=3.5) box(passage,[2.9,.11,.52],[0,height-.18,z],mats.light,[0,0,0],false,false);
+    for(let z=-3;z>-length+2;z-=5.2) cylinder(passage,.055,.055,width-.7,[-width/2+.35,height-.55,z],mats.metalDark,[0,0,Math.PI/2],8,false);
     return passage;
   }
 
@@ -70,13 +81,30 @@ export function rebuildSubway(api) {
     return stairs;
   }
 
-  // The painting's shallow, wide concourse.
+  // The painted concourse is shallow and wide, but its five exits are now physically open.
   box(station,[25,.2,25],[0,-.12,-3.5],mats.floor,[0,0,0],false,true);
   box(station,[25,.25,25],[0,6.45,-3.5],mats.ceiling,[0,0,0],false,true);
-  tiledWall(station,[.28,6.55,25],[-12.35,3.18,-3.5]);
-  tiledWall(station,[.28,6.55,25],[12.35,3.18,-3.5]);
-  tiledWall(station,[25,6.55,.28],[0,3.18,-15.85]);
-  for (const side of [-1,1]) box(station,[.32,1.0,24.5],[side*12.18,.92,-3.5],mats.green,[0,0,0],false,true);
+
+  // Left wall: opening at z=5.1 for the transverse passage.
+  tiledWall(station,[.28,6.55,18.7],[-12.35,3.18,-6.5]);
+  tiledWall(station,[.28,6.55,1.7],[-12.35,3.18,8.15]);
+  // Right wall: opening around z=-1.8.
+  tiledWall(station,[.28,6.55,11.6],[12.35,3.18,-10.05]);
+  tiledWall(station,[.28,6.55,8.6],[12.35,3.18,4.7]);
+  // Rear wall: broad central opening; diagonal passages slip behind the two side blocks.
+  tiledWall(station,[9.5,6.55,.28],[-7.75,3.18,-15.85]);
+  tiledWall(station,[9.5,6.55,.28],[7.75,3.18,-15.85]);
+
+  // Green dado follows the segmented walls and stops at every doorway.
+  box(station,[.32,1.0,18.5],[-12.18,.92,-6.55],mats.green,[0,0,0],false,true);
+  box(station,[.32,1.0,1.55],[-12.18,.92,8.2],mats.green,[0,0,0],false,true);
+  box(station,[.32,1.0,11.45],[12.18,.92,-10.05],mats.green,[0,0,0],false,true);
+  box(station,[.32,1.0,8.45],[12.18,.92,4.75],mats.green,[0,0,0],false,true);
+
+  portalFrame(station,[-12.18,0,5.1],Math.PI/2,4.8);
+  portalFrame(station,[12.18,0,-1.8],-Math.PI/2,4.8);
+  portalFrame(station,[0,0,-15.68],0,5.8);
+
   for (let z=-15;z<=8;z+=1.65) box(station,[24.5,.018,.045],[0,.015,z],mats.floorDark,[0,0,0],false,false);
   for (let x=-11.5;x<=11.5;x+=1.72) box(station,[.045,.018,24.5],[x,.016,-3.5],mats.floorDark,[0,0,0],false,false);
 
@@ -86,6 +114,7 @@ export function rebuildSubway(api) {
     const g = new THREE.Group(); g.position.set(x,0,z); station.add(g);
     tiledWall(g,[1.08,6.4,1.08],[0,3.2,0]);
     box(g,[1.13,1.0,1.13],[0,.92,0],mats.green);
+    box(g,[1.22,.18,1.22],[0,5.65,0],mats.tileShade);
   }
   for (const z of [-10.2,-4.8,3.15]) box(station,[20,.82,1.0],[0,6.02,z],mats.ceiling);
 
@@ -99,6 +128,7 @@ export function rebuildSubway(api) {
     box(booths,[3.8,.22,3.3],[0,6.12,z],mats.ceiling);
     box(booths,[3.1,.15,.65],[0,1.25,z-1.38],mats.metalDark);
     box(booths,[.38,.58,.18],[-.85,1.7,z-1.46],mats.metal);
+    box(booths,[2.9,3.6,.06],[0,3.25,z+1.58],mats.glass,[0,0,0],false,false);
     createGate(booths,[1.72,.02,z],Math.PI/2,3.1,5.5,.58);
   }
 
@@ -129,9 +159,32 @@ export function rebuildSubway(api) {
   createStairs(station,[-5.8,.02,-13.4],.06,4.1,13);
   createStairs(station,[9.0,.02,-5.4],-Math.PI/2,3.7,11);
 
-  // Fluorescent fixtures are lower and more fragmented than a modern station grid.
+  // Fluorescent fixtures are lower and fragmented rather than a generic modern grid.
   for (const [x,z,w] of [[0,5.4,6.8],[-2.8,.4,4.4],[3.1,-2.0,4.6],[0,-8.6,5.8],[-8.4,1.4,2.8],[8.0,-8.8,3.0]]) {
     box(station,[w,.1,.48],[x,6.23,z],mats.light,[0,0,0],false,false);
+  }
+
+  // Ticket window, benches, clock, ventilation and maintenance details complete the station logic.
+  const ticket = new THREE.Group(); ticket.position.set(-1.0,0,6.65); station.add(ticket);
+  box(ticket,[4.2,2.65,.3],[0,1.35,0],mats.tileShade);
+  box(ticket,[3.55,1.55,.08],[0,2.45,-.18],mats.glass,[0,0,0],false,false);
+  box(ticket,[3.9,.18,.55],[0,1.35,-.25],mats.metalDark);
+  for(const x of [-1.15,0,1.15]) box(ticket,[.08,1.5,.12],[x,2.45,-.22],mats.metal);
+  for(const [x,z,rot] of [[-2.7,5.55,0],[2.65,-7.2,Math.PI],[9.8,5.4,-Math.PI/2]]){
+    const bench=new THREE.Group();bench.position.set(x,0,z);bench.rotation.y=rot;station.add(bench);
+    box(bench,[3.2,.18,.68],[0,.72,0],mats.wood||mats.rust);
+    box(bench,[3.2,.85,.16],[0,1.2,.28],mats.rust);
+    for(const bx of [-1.25,1.25]) box(bench,[.14,.72,.14],[bx,.35,0],mats.metalDark);
+  }
+  const clock=new THREE.Group();clock.position.set(-4.45,4.65,4.05);station.add(clock);
+  cylinder(clock,.58,.58,.12,[0,0,0],mats.tileShade,[Math.PI/2,0,0],32,false);
+  cylinder(clock,.49,.49,.13,[0,0,-.03],mats.light,[Math.PI/2,0,0],32,false);
+  box(clock,[.04,.34,.04],[0,.11,-.13],mats.metalDark,[0,0,-.25],false,false);
+  box(clock,[.04,.24,.04],[.09,-.03,-.14],mats.metalDark,[0,0,1.0],false,false);
+  for(const x of [-9.5,-2.8,3.7,9.4]) cylinder(station,.055,.055,19,[x,5.82,-3.4],mats.metalDark,[Math.PI/2,0,0],8,false);
+  for(const [x,z] of [[-10.9,-8.2],[10.9,5.8],[2.8,-14.9]]){
+    box(station,[1.7,.9,.12],[x,4.8,z],mats.metalDark,[0,0,0],false,false);
+    for(let k=-.55;k<=.55;k+=.22) box(station,[.08,.65,.14],[x+k,4.8,z-.02],mats.tileShade,[0,0,0],false,false);
   }
 
   const figures=[];
@@ -156,7 +209,6 @@ export function rebuildSubway(api) {
     figures.push(person);return person;
   }
 
-  // Central woman and nearby commuters follow the painted horizontal rhythm.
   const centralWoman=figure({position:[0,.02,2.25],coat:mats.blueGrey,dress:mats.red,central:true,scale:1.14,rotationY:-.02,pose:'frozen'});
   figure({position:[-2.05,.04,1.4],coat:mats.rust,hat:true,bag:true,rotationY:.1,scale:1.04,gaze:-.016});
   figure({position:[1.65,.04,.95],coat:mats.ochre,hat:true,rotationY:-.1,scale:1.04,gaze:.018});
@@ -167,19 +219,18 @@ export function rebuildSubway(api) {
   figure({position:[4.65,.04,-3.65],coat:mats.blueGrey,hat:true,rotationY:-.28,scale:.82});
   figure({position:[8.5,.04,-6.1],coat:mats.rust,rotationY:-.82,scale:.72});
   figure({position:[1.0,.04,-11.0],coat:mats.ochre,hat:true,scale:.66});
-
-  // Three enclosed left figures make the cubicles legible from the original view.
   figure({position:[-8.55,.04,1.3],coat:mats.charcoal,rotationY:Math.PI,scale:.88,pose:'phone'});
   figure({position:[-8.55,.04,-2.05],coat:mats.olive,rotationY:Math.PI,scale:.84,pose:'phone'});
   figure({position:[-8.55,.04,-5.4],coat:mats.rust,rotationY:Math.PI,scale:.8,pose:'phone'});
+  figure({position:[-1.0,.04,-7.8],coat:mats.charcoal,hat:true,rotationY:.3,scale:.72});
+  figure({position:[9.6,.04,-1.8],coat:mats.olive,bag:true,rotationY:-Math.PI/2,scale:.78});
 
-  // Cast grid shadows lock the foreground group into the cage geometry.
   const shadowGrid=new THREE.Group();shadowGrid.position.set(.4,.022,1.7);shadowGrid.rotation.y=.12;station.add(shadowGrid);
   for(let x=-4.8;x<=4.8;x+=.58)box(shadowGrid,[.065,.018,8.0],[x,0,0],mats.shadow,[0,0,0],false,false);
   for(let z=-3.5;z<=3.5;z+=.92)box(shadowGrid,[10.0,.018,.065],[0,0,z],mats.shadow,[0,0,0],false,false);
 
-  // Direction signs and blank institutional panels deepen the station logic.
-  for (const [x,z,rot] of [[-5.15,-1.3,0],[4.45,-2.8,0],[-10.1,6.2,Math.PI/2],[10.05,-3.3,-Math.PI/2]]) {
+  // Direction signs point into each real opening.
+  for (const [x,z,rot] of [[-5.15,-1.3,0],[4.45,-2.8,0],[-10.1,6.2,Math.PI/2],[10.05,-3.3,-Math.PI/2],[0,-14.9,0]]) {
     box(station,[2.2,.7,.08],[x,5.25,z],mats.green,[0,rot,0],false,false);
     box(station,[1.45,.08,.1],[x,5.25,z-.06],mats.light,[0,rot,0],false,false);
   }
