@@ -17,10 +17,8 @@ const isMobile = matchMedia('(max-width: 760px)').matches || navigator.maxTouchP
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x30251f);
-scene.fog = new THREE.Fog(0x30251f, 34, 120);
-const camera = new THREE.PerspectiveCamera(37, innerWidth / innerHeight, .06, 240);
-camera.position.set(0, 5.25, 18.6);
-
+scene.fog = new THREE.Fog(0x30251f, 38, 155);
+const camera = new THREE.PerspectiveCamera(37, innerWidth / innerHeight, .045, 320);
 const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: 'high-performance', alpha: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.32 : 2));
 renderer.setSize(innerWidth, innerHeight);
@@ -28,22 +26,22 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.02;
+renderer.toneMappingExposure = 1.04;
 container.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = .072;
+controls.dampingFactor = .07;
 controls.enablePan = true;
 controls.screenSpacePanning = true;
-controls.rotateSpeed = .4;
-controls.zoomSpeed = .72;
-controls.panSpeed = .6;
-controls.minDistance = 3.7;
-controls.maxDistance = 92;
-controls.minPolarAngle = .14;
-controls.maxPolarAngle = 1.58;
-controls.target.set(0, 3.0, -3.6);
+controls.zoomToCursor = true;
+controls.rotateSpeed = .46;
+controls.zoomSpeed = .84;
+controls.panSpeed = .72;
+controls.minDistance = 1.8;
+controls.maxDistance = 145;
+controls.minPolarAngle = .035;
+controls.maxPolarAngle = 1.84;
 controls.touches.ONE = THREE.TOUCH.ROTATE;
 controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
@@ -89,9 +87,9 @@ function canvasTexture(draw, width = 900, height = 600) {
 
 const fidelity = rebuildLastSupper({ THREE, scene, world, makeMaterial, box, cylinder, sphere, limbBetween, canvasTexture, isMobile, renderer });
 
-const ambient = new THREE.HemisphereLight(0xc1b58d, 0x2b211c, .58);
+const ambient = new THREE.HemisphereLight(0xc1b58d, 0x2b211c, .62);
 scene.add(ambient);
-const leftDaylight = new THREE.DirectionalLight(0xffe6bd, 2.25);
+const leftDaylight = new THREE.DirectionalLight(0xffe6bd, 2.35);
 leftDaylight.position.set(-16, 12, 9);
 leftDaylight.target.position.set(0, 3.1, -4.3);
 leftDaylight.castShadow = true;
@@ -105,49 +103,57 @@ scene.add(leftDaylight, leftDaylight.target);
 const backWindowLights = new THREE.Group();
 scene.add(backWindowLights);
 for (const x of [-4.2, 0, 4.2]) {
-  const light = new THREE.RectAreaLight(0xcdd7ca, 2.05, 2.55, 4.6);
+  const light = new THREE.RectAreaLight(0xcdd7ca, 2.15, 2.55, 4.6);
   light.position.set(x, 3.8, -10.05);
   light.lookAt(x, 3.0, -3.0);
   backWindowLights.add(light);
 }
-const tableFill = new THREE.PointLight(0xffc98e, 1.0, 24, 1.8);
+const tableFill = new THREE.PointLight(0xffc98e, 1.12, 26, 1.8);
 tableFill.position.set(0, 5.2, -1.4);
 scene.add(tableFill);
 
-const compositionTarget = new THREE.Vector3(0, 3.0, -3.6);
-const desktopComposition = new THREE.Vector3(0, 5.25, 18.6);
-let tween = null;
-let lightOn = true;
-let autoOrbit = false;
-
-function compositionPose() {
-  const aspect = innerWidth / innerHeight;
-  const factor = aspect < .72 ? 2.28 : aspect < 1.05 ? 1.68 : aspect < 1.45 ? 1.18 : 1;
-  return compositionTarget.clone().add(desktopComposition.clone().sub(compositionTarget).multiplyScalar(factor));
-}
+const compositionPresets = {
+  wide: { position: [0, 5.25, 18.6], target: [0, 3.0, -3.6], fov: 37 },
+  square: { position: [0, 5.75, 24.4], target: [0, 3.08, -3.8], fov: 45 },
+  portrait: { position: [0, 6.05, 31.2], target: [0, 3.15, -3.9], fov: 50 }
+};
+const overviewPresets = {
+  wide: { position: [14.5, 9.4, 21.0], target: [0, 3.2, -4.4], fov: 42 },
+  square: { position: [17.5, 11.5, 29.0], target: [0, 3.3, -4.8], fov: 47 },
+  portrait: { position: [18.5, 12.5, 36.0], target: [0, 3.4, -5.0], fov: 52 }
+};
+function viewportMode() { const aspect = innerWidth / innerHeight; return aspect < .72 ? 'portrait' : aspect < 1.18 ? 'square' : 'wide'; }
+function presetFor(collection) { return collection[viewportMode()]; }
+let tween = null, lightOn = true, autoOrbit = false, viewMode = 'composition';
 function ease(t) { return t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; }
-function moveCamera(destination, targetDestination = compositionTarget, duration = prefersReducedMotion ? 1 : 950) {
-  tween = { start: performance.now(), duration, fromPos: camera.position.clone(), toPos: destination.clone(), fromTarget: controls.target.clone(), toTarget: targetDestination.clone() };
+function moveCamera(preset, duration = prefersReducedMotion ? 1 : 950) {
+  tween = {
+    start: performance.now(), duration,
+    fromPos: camera.position.clone(), toPos: new THREE.Vector3(...preset.position),
+    fromTarget: controls.target.clone(), toTarget: new THREE.Vector3(...preset.target),
+    fromFov: camera.fov, toFov: preset.fov
+  };
 }
 function stopAutomatedMotion() {
   tween = null;
   if (autoOrbit) { autoOrbit = false; controls.autoRotate = false; exploreButton.setAttribute('aria-pressed','false'); }
-  compositionButton.classList.remove('primary');
+  viewMode = 'free'; compositionButton.classList.remove('primary');
 }
 function returnToComposition() {
   autoOrbit = false; controls.autoRotate = false; exploreButton.setAttribute('aria-pressed','false');
-  compositionButton.classList.add('primary'); moveCamera(compositionPose());
+  viewMode = 'composition'; compositionButton.classList.add('primary'); moveCamera(presetFor(compositionPresets));
 }
 compositionButton.addEventListener('click', returnToComposition);
 resetButton.addEventListener('click', returnToComposition);
 exploreButton.addEventListener('click', () => {
   tween = null; autoOrbit = !autoOrbit; controls.autoRotate = autoOrbit; controls.autoRotateSpeed = .18;
   exploreButton.setAttribute('aria-pressed', String(autoOrbit)); compositionButton.classList.toggle('primary', !autoOrbit);
+  if (autoOrbit) { viewMode = 'overview'; moveCamera(presetFor(overviewPresets)); } else viewMode = 'free';
 });
 lightButton.addEventListener('click', () => {
   lightOn = !lightOn; lightButton.setAttribute('aria-pressed', String(lightOn));
-  leftDaylight.intensity = lightOn ? 2.25 : .28; backWindowLights.visible = lightOn;
-  tableFill.intensity = lightOn ? 1.0 : .18; renderer.toneMappingExposure = lightOn ? 1.02 : .7;
+  leftDaylight.intensity = lightOn ? 2.35 : .28; backWindowLights.visible = lightOn;
+  tableFill.intensity = lightOn ? 1.12 : .18; renderer.toneMappingExposure = lightOn ? 1.04 : .7;
 });
 controls.addEventListener('start', () => { hint.classList.add('hidden'); stopAutomatedMotion(); });
 
@@ -173,10 +179,16 @@ renderer.domElement.addEventListener('pointerup', finishPointer, { passive:true 
 renderer.domElement.addEventListener('pointercancel', finishPointer, { passive:true });
 renderer.domElement.addEventListener('dblclick', returnToComposition);
 
+function applyPresetImmediately(preset) {
+  camera.position.set(...preset.position); controls.target.set(...preset.target); camera.fov = preset.fov;
+  camera.updateProjectionMatrix(); controls.update();
+}
 function resize() {
   camera.aspect = innerWidth / innerHeight;
-  camera.fov = camera.aspect < .72 ? 52 : camera.aspect < 1.05 ? 46 : 37;
-  camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
+  if (viewMode === 'composition' && !tween) applyPresetImmediately(presetFor(compositionPresets));
+  else if (viewMode === 'overview' && !tween) applyPresetImmediately(presetFor(overviewPresets));
+  else camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
   renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.32 : 2));
 }
 addEventListener('resize', resize, { passive:true });
@@ -188,12 +200,13 @@ function animate(now) {
     const progress = Math.min(1, (now-tween.start)/tween.duration), eased = ease(progress);
     camera.position.lerpVectors(tween.fromPos, tween.toPos, eased);
     controls.target.lerpVectors(tween.fromTarget, tween.toTarget, eased);
+    camera.fov = THREE.MathUtils.lerp(tween.fromFov, tween.toFov, eased); camera.updateProjectionMatrix();
     if (progress >= 1) tween = null;
   }
-  if (!prefersReducedMotion && lightOn) tableFill.intensity = 1.0 + Math.sin(elapsed * .45) * .018;
+  if (!prefersReducedMotion && lightOn) tableFill.intensity = 1.12 + Math.sin(elapsed * .45) * .018;
   controls.update(); renderer.render(scene, camera);
 }
-resize(); camera.position.copy(compositionPose()); controls.target.copy(compositionTarget); controls.update();
+const initialPreset = presetFor(compositionPresets); applyPresetImmediately(initialPreset); resize();
 renderer.setAnimationLoop(animate);
 requestAnimationFrame(() => { renderer.render(scene, camera); loading.classList.add('done'); setTimeout(() => hint.classList.add('hidden'), 6000); });
 
