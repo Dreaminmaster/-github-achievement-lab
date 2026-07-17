@@ -46,13 +46,15 @@ jobs:
 
       - name: Exercise composition return in every scene
         run: |
-          set -euo pipefail
+          set -uo pipefail
           chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
+          failed=0
           verify_scene() {
             slug="$1"
             output="/tmp/${slug}.html"
             errors="/tmp/${slug}.errors"
-            timeout 70s "$chrome" \
+            echo "--- verifying ${slug} ---"
+            if ! timeout 70s "$chrome" \
               --headless=new \
               --no-sandbox \
               --disable-dev-shm-usage \
@@ -63,19 +65,41 @@ jobs:
               --ignore-gpu-blocklist \
               --virtual-time-budget=26000 \
               --dump-dom "http://127.0.0.1:4173/scenes/${slug}/?ci=1&verifyComposition=1" \
-              > "$output" 2> "$errors"
-            grep -q '<canvas' "$output"
-            grep -q 'class="loading done"' "$output"
-            grep -q 'data-composition-ready="true"' "$output"
-            if grep -q 'class="loading failed"' "$output"; then
+              > "$output" 2> "$errors"; then
+              echo "${slug}: Chrome failed"
               cat "$errors"
-              exit 1
+              failed=1
+              return
+            fi
+            if ! grep -q '<canvas' "$output"; then
+              echo "${slug}: no WebGL canvas"
+              tail -n 60 "$output"
+              cat "$errors"
+              failed=1
+            fi
+            if ! grep -q 'class="loading done"' "$output"; then
+              echo "${slug}: loading did not finish"
+              grep -o 'class="loading[^"]*"' "$output" | tail -n 5 || true
+              cat "$errors"
+              failed=1
+            fi
+            if ! grep -q 'data-composition-ready="true"' "$output"; then
+              echo "${slug}: composition return did not finish"
+              grep -o 'data-composition-[^ ]*' "$output" | head -n 10 || true
+              cat "$errors"
+              failed=1
+            fi
+            if grep -q 'class="loading failed"' "$output"; then
+              echo "${slug}: runtime entered failure state"
+              cat "$errors"
+              failed=1
             fi
           }
           verify_scene nighthawks
           verify_scene rooms-by-the-sea
           verify_scene last-supper
           verify_scene the-subway
+          exit "$failed"
 
       - name: Capture post-click desktop and mobile composition screenshots
         run: |
