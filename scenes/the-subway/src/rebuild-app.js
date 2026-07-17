@@ -63,7 +63,17 @@ function viewportMode(){const aspect=innerWidth/innerHeight;return aspect<.72?'p
 function presetFor(collection){return collection[viewportMode()];}
 let tween=null,lightOn=true,autoOrbit=false,viewMode='composition';
 function ease(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
-function moveCamera(preset,duration=prefersReducedMotion?1:950){document.documentElement.dataset.compositionReady='false';tween={start:performance.now(),duration,fromPos:camera.position.clone(),toPos:new THREE.Vector3(...preset.position),fromTarget:controls.target.clone(),toTarget:new THREE.Vector3(...preset.target),fromFov:camera.fov,toFov:preset.fov};}
+function applyPresetImmediately(preset){camera.position.set(...preset.position);controls.target.set(...preset.target);camera.fov=preset.fov;camera.updateProjectionMatrix();controls.update();controls.saveState?.();}
+function moveCamera(preset,duration=950){
+  document.documentElement.dataset.compositionReady='false';
+  if(prefersReducedMotion){
+    tween=null;
+    applyPresetImmediately(preset);
+    if(viewMode==='composition')document.documentElement.dataset.compositionReady='true';
+    return;
+  }
+  tween={start:performance.now(),duration,fromPos:camera.position.clone(),toPos:new THREE.Vector3(...preset.position),fromTarget:controls.target.clone(),toTarget:new THREE.Vector3(...preset.target),fromFov:camera.fov,toFov:preset.fov};
+}
 function beginFreeInteraction(){if(viewMode==='free'&&!autoOrbit)return;tween=null;compositionSafety.exit();if(autoOrbit){autoOrbit=false;controls.autoRotate=false;exploreButton.setAttribute('aria-pressed','false');}viewMode='free';compositionButton.classList.remove('primary');document.documentElement.dataset.compositionReady='false';}
 function returnToComposition(){autoOrbit=false;controls.autoRotate=false;exploreButton.setAttribute('aria-pressed','false');viewMode='composition';compositionButton.classList.add('primary');moveCamera(compositionSafety.resolve(presetFor(compositionPresets)));}
 compositionButton.addEventListener('click',returnToComposition);resetButton.addEventListener('click',returnToComposition);
@@ -77,7 +87,6 @@ renderer.domElement.addEventListener('pointermove',(event)=>{const start=pointer
 function finishPointer(event){const start=pointerStarts.get(event.pointerId),hadMultiple=multiTouchGesture;activePointers.delete(event.pointerId);pointerStarts.delete(event.pointerId);if(activePointers.size===0)multiTouchGesture=false;if(!start||event.pointerType==='mouse'||hadMultiple||start.moved||performance.now()-start.time>320)return;const now=performance.now();if(now-lastSingleTap<340){lastSingleTap=-Infinity;returnToComposition();}else lastSingleTap=now;}
 renderer.domElement.addEventListener('pointerup',finishPointer,{passive:true});renderer.domElement.addEventListener('pointercancel',finishPointer,{passive:true});renderer.domElement.addEventListener('dblclick',returnToComposition);renderer.domElement.addEventListener('wheel',beginFreeInteraction,{passive:true});
 
-function applyPresetImmediately(preset){camera.position.set(...preset.position);controls.target.set(...preset.target);camera.fov=preset.fov;camera.updateProjectionMatrix();controls.update();controls.saveState?.();}
 function resize(){camera.aspect=innerWidth/innerHeight;if(viewMode==='composition'&&!tween)applyPresetImmediately(compositionSafety.resolve(presetFor(compositionPresets)));else if(viewMode==='overview'&&!tween)applyPresetImmediately(presetFor(overviewPresets));else camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile?1.3:2));}
 addEventListener('resize',resize,{passive:true});
 const clock=new THREE.Clock();
