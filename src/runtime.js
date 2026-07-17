@@ -34,15 +34,18 @@ dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3
 const dustMaterial = new THREE.PointsMaterial({ color: 0xffedb1, size: .016, transparent: true, opacity: .3, depthWrite: false, blending: THREE.AdditiveBlending });
 const dust = new THREE.Points(dustGeometry, dustMaterial); diner.add(dust);
 
+// One authoritative set of composition poses. These preserve the complete diner
+// framing previously applied by the orientation module, but now load, reset,
+// double-tap and explore-return all resolve to exactly the same camera state.
 const compositionPresets = {
-  wide: { position: [-4.8, 5.15, -15.8], target: [3.1, 2.22, 4.25], fov: 38 },
-  square: { position: [-6.05, 5.0, -19.2], target: [4.1, 2.18, 4.4], fov: 60 },
-  portrait: { position: [-7.0, 4.75, -22.4], target: [4.5, 2.12, 4.45], fov: 78 }
+  wide: { position: [-6.25, 5.2, -19.2], target: [-1.25, 2.28, 4.28], fov: 38 },
+  square: { position: [-8.25, 6.368, -28.592], target: [-1.25, 2.28, 4.28], fov: 60 },
+  portrait: { position: [-9.85, 7.3024, -36.1056], target: [-1.25, 2.28, 4.28], fov: 78 }
 };
 const overviewPresets = {
-  wide: { position: [-12.2, 8.0, -22.0], target: [3.1, 2.0, 4.4], fov: 44 },
-  square: { position: [-13.6, 9.0, -24.0], target: [3.1, 2.0, 4.4], fov: 50 },
-  portrait: { position: [-14.8, 9.8, -25.5], target: [3.1, 2.0, 4.4], fov: 62 }
+  wide: { position: [-12.2, 8.0, -22.0], target: [-1.25, 2.1, 4.28], fov: 44 },
+  square: { position: [-15.2, 9.4, -30.0], target: [-1.25, 2.1, 4.28], fov: 54 },
+  portrait: { position: [-17.8, 10.8, -36.5], target: [-1.25, 2.1, 4.28], fov: 64 }
 };
 function viewportMode() { const aspect = innerWidth / innerHeight; return aspect < .72 ? 'portrait' : aspect < 1.18 ? 'square' : 'wide'; }
 function presetFor(collection) { return collection[viewportMode()]; }
