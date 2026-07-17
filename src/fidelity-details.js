@@ -15,6 +15,7 @@ if (district && diner) {
   const paper = makeMaterial(0xd9d1aa, { roughness: .95 });
   const coffee = makeMaterial(0x2a1711, { roughness: .58 });
   const chrome = makeMaterial(0x89918c, { roughness: .24, metalness: .8 });
+  const ceramic = makeMaterial(0xe9dfb8, { roughness: .72 });
 
   // Street infrastructure gives the broad empty foreground physical scale without filling its silence.
   for (const x of [-1.4, 5.8, 12.1]) {
@@ -67,7 +68,7 @@ if (district && diner) {
     box(diner,[.2,.16,.02],[x,2.08,3.95],paper,[0,0,0],false,false);
   }
   for(const [x,z] of [[2.1,4.12],[3.0,4.08],[7.05,4.05],[7.7,4.08]]){
-    cylinder(diner,.055,.065,.12,[x,1.9,z],cream,[0,0,0],14,false);
+    cylinder(diner,.055,.065,.12,[x,1.9,z],ceramic,[0,0,0],14,false);
     box(diner,[.18,.018,.18],[x,1.82,z],chrome,[0,0,0],false,false);
   }
   box(diner,[1.1,.08,.52],[10.65,1.92,5.95],paper,[0,-.18,0],false,false);
