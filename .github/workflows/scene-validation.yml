@@ -95,7 +95,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mobile-interaction-stability
-          path: /tmp/tap-stability/*.png
+          path: /tmp/tap-stability/*
           if-no-files-found: warn
           retention-days: 7
 
