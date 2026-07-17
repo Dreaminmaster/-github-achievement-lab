@@ -34,40 +34,59 @@ dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3
 const dustMaterial = new THREE.PointsMaterial({ color: 0xffedb1, size: .016, transparent: true, opacity: .3, depthWrite: false, blending: THREE.AdditiveBlending });
 const dust = new THREE.Points(dustGeometry, dustMaterial); diner.add(dust);
 
-const compositionTarget = new THREE.Vector3(3.1, 2.22, 4.25);
-const desktopComposition = new THREE.Vector3(-4.8, 5.15, -15.8);
-const compositionSafety = createSafeComposition({ THREE, root: window.NH.fidelityDistrict || window.NH.world, targetTolerance: 1.1 });
+// One authoritative set of composition poses. These preserve the complete diner
+// framing previously applied by the orientation module, but now load, reset,
+// double-tap and explore-return all resolve to exactly the same camera state.
+const compositionPresets = {
+  wide: { position: [-6.25, 5.2, -19.2], target: [-1.25, 2.28, 4.28], fov: 38 },
+  square: { position: [-8.25, 6.368, -28.592], target: [-1.25, 2.28, 4.28], fov: 60 },
+  portrait: { position: [-9.85, 7.3024, -36.1056], target: [-1.25, 2.28, 4.28], fov: 78 }
+};
+const overviewPresets = {
+  wide: { position: [-12.2, 8.0, -22.0], target: [-1.25, 2.1, 4.28], fov: 44 },
+  square: { position: [-15.2, 9.4, -30.0], target: [-1.25, 2.1, 4.28], fov: 54 },
+  portrait: { position: [-17.8, 10.8, -36.5], target: [-1.25, 2.1, 4.28], fov: 64 }
+};
+function viewportMode() { const aspect = innerWidth / innerHeight; return aspect < .72 ? 'portrait' : aspect < 1.18 ? 'square' : 'wide'; }
+function presetFor(collection) { return collection[viewportMode()]; }
+const compositionSafety = createSafeComposition({ THREE, root: window.NH.fidelityDistrict || window.NH.world, allowRelocation: false });
 let tween = null, lightOn = true, autoOrbit = false, viewMode = 'composition';
 
-function compositionPose() { const aspect = innerWidth / innerHeight; const factor = aspect < .72 ? 1.55 : aspect < 1.05 ? 1.34 : aspect < 1.42 ? 1.12 : 1; return compositionTarget.clone().add(desktopComposition.clone().sub(compositionTarget).multiplyScalar(factor)); }
-function compositionPreset() { const aspect = innerWidth / innerHeight; return { position: compositionPose().toArray(), target: compositionTarget.toArray(), fov: aspect < .72 ? 49 : aspect < 1.05 ? 44 : 38 }; }
-function overviewPreset() { const aspect = innerWidth / innerHeight; return { position: aspect < .72 ? [-14.8, 9.8, -25.5] : [-12.2, 8.0, -22.0], target: [3.1, 2.0, 4.4], fov: aspect < .72 ? 56 : 44 }; }
 function easeInOutCubic(t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-function moveCamera(preset, duration = prefersReducedMotion ? 1 : 850) { document.documentElement.dataset.compositionReady = 'false'; tween = { start: performance.now(), duration, fromPos: camera.position.clone(), toPos: new THREE.Vector3(...preset.position), fromTarget: controls.target.clone(), toTarget: new THREE.Vector3(...preset.target), fromFov: camera.fov, toFov: preset.fov }; }
-function stopAutomatedMotion() { tween = null; compositionSafety.exit(); if (autoOrbit) { autoOrbit = false; controls.autoRotate = false; exploreButton.setAttribute('aria-pressed', 'false'); } viewMode = 'free'; compositionButton.classList.remove('primary'); }
-function returnToComposition() { autoOrbit = false; controls.autoRotate = false; exploreButton.setAttribute('aria-pressed', 'false'); viewMode = 'composition'; compositionButton.classList.add('primary'); moveCamera(compositionSafety.resolve(compositionPreset())); }
+function applyPresetImmediately(preset) { camera.position.set(...preset.position); controls.target.set(...preset.target); camera.fov = preset.fov; camera.updateProjectionMatrix(); controls.update(); controls.saveState?.(); }
+function moveCamera(preset, duration = 850) {
+  document.documentElement.dataset.compositionReady = 'false';
+  if (prefersReducedMotion) {
+    tween = null;
+    applyPresetImmediately(preset);
+    if (viewMode === 'composition') document.documentElement.dataset.compositionReady = 'true';
+    return;
+  }
+  tween = { start: performance.now(), duration, fromPos: camera.position.clone(), toPos: new THREE.Vector3(...preset.position), fromTarget: controls.target.clone(), toTarget: new THREE.Vector3(...preset.target), fromFov: camera.fov, toFov: preset.fov };
+}
+function beginFreeInteraction() { if (viewMode === 'free' && !autoOrbit) return; tween = null; compositionSafety.exit(); if (autoOrbit) { autoOrbit = false; controls.autoRotate = false; exploreButton.setAttribute('aria-pressed', 'false'); } viewMode = 'free'; compositionButton.classList.remove('primary'); document.documentElement.dataset.compositionReady = 'false'; }
+function returnToComposition() { autoOrbit = false; controls.autoRotate = false; exploreButton.setAttribute('aria-pressed', 'false'); viewMode = 'composition'; compositionButton.classList.add('primary'); moveCamera(compositionSafety.resolve(presetFor(compositionPresets))); }
 
 compositionButton.addEventListener('click', returnToComposition); resetButton.addEventListener('click', returnToComposition);
-exploreButton.addEventListener('click', () => { tween = null; compositionSafety.exit(); autoOrbit = !autoOrbit; controls.autoRotate = autoOrbit; controls.autoRotateSpeed = .24; exploreButton.setAttribute('aria-pressed', String(autoOrbit)); compositionButton.classList.toggle('primary', !autoOrbit); if (autoOrbit) { viewMode = 'overview'; moveCamera(overviewPreset()); } else viewMode = 'free'; });
+exploreButton.addEventListener('click', () => { tween = null; compositionSafety.exit(); autoOrbit = !autoOrbit; controls.autoRotate = autoOrbit; controls.autoRotateSpeed = .24; exploreButton.setAttribute('aria-pressed', String(autoOrbit)); compositionButton.classList.toggle('primary', !autoOrbit); if (autoOrbit) { viewMode = 'overview'; moveCamera(presetFor(overviewPresets)); } else viewMode = 'free'; });
 lightButton.addEventListener('click', () => { lightOn = !lightOn; lightButton.setAttribute('aria-pressed', String(lightOn)); interiorLights.visible = lightOn; mats.glow.emissiveIntensity = lightOn ? 2.65 : .08; mats.yellowWall.emissiveIntensity = lightOn ? .2 : .008; renderer.toneMappingExposure = lightOn ? 1.22 : .68; });
-controls.addEventListener('start', () => { hint.classList.add('hidden'); stopAutomatedMotion(); });
+controls.addEventListener('start', () => hint.classList.add('hidden'));
 
 const activePointers = new Set(); const pointerStarts = new Map(); let multiTouchGesture = false; let lastSingleTap = -Infinity;
-renderer.domElement.addEventListener('pointerdown', (event) => { activePointers.add(event.pointerId); pointerStarts.set(event.pointerId, { x: event.clientX, y: event.clientY, time: performance.now() }); if (activePointers.size > 1) multiTouchGesture = true; hint.classList.add('hidden'); stopAutomatedMotion(); }, { passive: true });
-renderer.domElement.addEventListener('pointermove', (event) => { const start = pointerStarts.get(event.pointerId); if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 10) start.moved = true; }, { passive: true });
+renderer.domElement.addEventListener('pointerdown', (event) => { activePointers.add(event.pointerId); pointerStarts.set(event.pointerId, { x: event.clientX, y: event.clientY, time: performance.now(), moved: false }); if (activePointers.size > 1) { multiTouchGesture = true; beginFreeInteraction(); } hint.classList.add('hidden'); }, { passive: true });
+renderer.domElement.addEventListener('pointermove', (event) => { const start = pointerStarts.get(event.pointerId); if (!start || start.moved) return; if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 12) { start.moved = true; beginFreeInteraction(); } }, { passive: true });
 function finishPointer(event) { const start = pointerStarts.get(event.pointerId); const hadMultiple = multiTouchGesture; activePointers.delete(event.pointerId); pointerStarts.delete(event.pointerId); if (activePointers.size === 0) multiTouchGesture = false; if (!start || event.pointerType === 'mouse' || hadMultiple || start.moved) return; if (performance.now() - start.time > 320) return; const now = performance.now(); if (now - lastSingleTap < 340) { lastSingleTap = -Infinity; returnToComposition(); } else lastSingleTap = now; }
-renderer.domElement.addEventListener('pointerup', finishPointer, { passive: true }); renderer.domElement.addEventListener('pointercancel', finishPointer, { passive: true }); renderer.domElement.addEventListener('dblclick', returnToComposition);
+renderer.domElement.addEventListener('pointerup', finishPointer, { passive: true }); renderer.domElement.addEventListener('pointercancel', finishPointer, { passive: true }); renderer.domElement.addEventListener('dblclick', returnToComposition); renderer.domElement.addEventListener('wheel', beginFreeInteraction, { passive: true });
 
-function applyPresetImmediately(preset) { camera.position.set(...preset.position); controls.target.set(...preset.target); camera.fov = preset.fov; camera.updateProjectionMatrix(); controls.update(); }
-function resize() { camera.aspect = innerWidth / innerHeight; if (viewMode === 'composition' && !tween) applyPresetImmediately(compositionSafety.resolve(compositionPreset())); else if (viewMode === 'overview' && !tween) applyPresetImmediately(overviewPreset()); else camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.35 : 2)); }
+function resize() { camera.aspect = innerWidth / innerHeight; if (viewMode === 'composition' && !tween) applyPresetImmediately(compositionSafety.resolve(presetFor(compositionPresets))); else if (viewMode === 'overview' && !tween) applyPresetImmediately(presetFor(overviewPresets)); else camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.35 : 2)); }
 addEventListener('resize', resize, { passive: true });
 
 const clock = new THREE.Clock();
-function animate(now) { const elapsed = clock.getElapsedTime(); if (tween) { const progress = Math.min(1, (now - tween.start) / tween.duration); const eased = easeInOutCubic(progress); camera.position.lerpVectors(tween.fromPos, tween.toPos, eased); controls.target.lerpVectors(tween.fromTarget, tween.toTarget, eased); camera.fov = THREE.MathUtils.lerp(tween.fromFov, tween.toFov, eased); camera.updateProjectionMatrix(); if (progress >= 1) { tween = null; if (viewMode === 'composition') document.documentElement.dataset.compositionReady = 'true'; } } if (!prefersReducedMotion) { dust.rotation.y = elapsed * .006; dust.position.y = Math.sin(elapsed * .18) * .018; if (lightOn) { ceilingFront.intensity = 11.0 + Math.sin(elapsed * 1.3) * .05; ceilingBack.intensity = 8.2 + Math.sin(elapsed * 1.1) * .035; dinerFill.intensity = 4.5 + Math.sin(elapsed * 1.9) * .03; counterGlow.intensity = 2.2 + Math.sin(elapsed * 1.55) * .025; } } controls.update(); renderer.render(scene, camera); }
+function animate(now) { const elapsed = clock.getElapsedTime(); if (tween) { const progress = Math.min(1, (now - tween.start) / tween.duration); const eased = easeInOutCubic(progress); camera.position.lerpVectors(tween.fromPos, tween.toPos, eased); controls.target.lerpVectors(tween.fromTarget, tween.toTarget, eased); camera.fov = THREE.MathUtils.lerp(tween.fromFov, tween.toFov, eased); camera.updateProjectionMatrix(); if (progress >= 1) { tween = null; controls.update(); controls.saveState?.(); if (viewMode === 'composition') document.documentElement.dataset.compositionReady = 'true'; } } if (!prefersReducedMotion) { dust.rotation.y = elapsed * .006; dust.position.y = Math.sin(elapsed * .18) * .018; if (lightOn) { ceilingFront.intensity = 11.0 + Math.sin(elapsed * 1.3) * .05; ceilingBack.intensity = 8.2 + Math.sin(elapsed * 1.1) * .035; dinerFill.intensity = 4.5 + Math.sin(elapsed * 1.9) * .03; counterGlow.intensity = 2.2 + Math.sin(elapsed * 1.55) * .025; } } controls.update(); renderer.render(scene, camera); }
 
-const initialPreset = compositionSafety.resolve(compositionPreset()); applyPresetImmediately(initialPreset); resize(); document.documentElement.dataset.compositionReady = 'true';
-if (verifyComposition) { compositionSafety.exit(); viewMode = 'overview'; applyPresetImmediately(overviewPreset()); setTimeout(returnToComposition, 80); }
+const initialPreset = compositionSafety.resolve(presetFor(compositionPresets)); applyPresetImmediately(initialPreset); resize(); document.documentElement.dataset.compositionReady = 'true';
+if (verifyComposition) { compositionSafety.exit(); viewMode = 'overview'; applyPresetImmediately(presetFor(overviewPresets)); setTimeout(returnToComposition, 80); }
 renderer.setAnimationLoop(animate);
 requestAnimationFrame(() => { renderer.render(scene, camera); loading.classList.add('done'); setTimeout(() => hint.classList.add('hidden'), 5500); });
 
-Object.assign(window.NH, { ambient, moon, streetFill, interiorLights, dust, returnToComposition, stopAutomatedMotion });
+Object.assign(window.NH, { ambient, moon, streetFill, interiorLights, dust, returnToComposition, beginFreeInteraction });

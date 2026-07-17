@@ -11,6 +11,7 @@ const files = [
   'shared/scene-selector.js',
   'shared/safe-composition.js',
   '.github/workflows/scene-validation.yml',
+  'scripts/mobile-tap-stability.mjs',
   'scenes/nighthawks/index.html',
   'scenes/nighthawks/styles.css',
   'scenes/nighthawks/src/app.js',
@@ -19,6 +20,7 @@ const files = [
   'src/environment.js',
   'src/characters.js',
   'src/fidelity.js',
+  'src/fidelity-details.js',
   'src/fidelity-orientation.js',
   'src/runtime.js',
   'scenes/rooms-by-the-sea/index.html',
@@ -29,12 +31,14 @@ const files = [
   'scenes/last-supper/styles.css',
   'scenes/last-supper/src/app.js',
   'scenes/last-supper/src/fidelity.js',
+  'scenes/last-supper/src/fidelity-details.js',
   'scenes/last-supper/src/rebuild-app.js',
   'scenes/last-supper/src/composition-fix.js',
   'scenes/the-subway/index.html',
   'scenes/the-subway/styles.css',
   'scenes/the-subway/src/app.js',
   'scenes/the-subway/src/fidelity.js',
+  'scenes/the-subway/src/fidelity-details.js',
   'scenes/the-subway/src/rebuild-app.js',
   'scenes/the-subway/src/composition-fix.js',
   'vendor/three/three.module.min.js',
@@ -88,11 +92,17 @@ const requiredMarkers = [
   'renderer.setAnimationLoop',
   'nighthawks-fidelity-rebuild',
   'faithful-diner',
+  'nighthawks-detail-layer',
   'complete-living-room',
   'rear-house-extension',
+  'west-roof-slope',
+  'east-roof-slope',
   'leonardo-perspective-box',
   'last-supper-fidelity-rebuild',
+  'last-supper-detail-layer',
   'the-subway-fidelity-rebuild',
+  'connected-entry-concourse',
+  'portalFrame',
   'rebuildRooms',
   'rebuildLastSupper',
   'rebuildSubway',
@@ -105,24 +115,37 @@ const requiredMarkers = [
   'glassSpillFront',
   'glassSpillCorner',
   'createSafeComposition',
+  'allowRelocation: false',
+  'compositionStrategy',
   'compositionReady',
   'verifyComposition',
-  'Exercise composition return in every scene',
-  'Capture post-click desktop and mobile composition screenshots',
+  'beginFreeInteraction',
+  'Verify initial anchored composition in every scene',
+  'Verify stationary touch and real composition return',
+  'mobile-tap-stability.mjs',
+  'Capture desktop and mobile composition screenshots',
   '390,844',
   'loading-error-message'
 ];
 const missing = requiredMarkers.filter((token) => !joined.includes(token));
 if (missing.length) throw new Error(`Missing required markers: ${missing.join(', ')}`);
 
-for (const dependency of ['./core.js', './environment.js', './characters.js', './fidelity.js', './runtime.js', './fidelity-orientation.js']) {
+for (const dependency of ['./core.js', './environment.js', './characters.js', './fidelity.js', './fidelity-details.js', './runtime.js', './fidelity-orientation.js']) {
   if (!content['src/app.js'].includes(dependency)) throw new Error(`src/app.js does not import ${dependency}`);
 }
-if (!content['src/runtime.js'].includes("../shared/safe-composition.js")) throw new Error('Nighthawks runtime does not use the safe composition solver.');
+if (!content['src/runtime.js'].includes("../shared/safe-composition.js") || !content['src/runtime.js'].includes('allowRelocation: false')) {
+  throw new Error('Nighthawks runtime must use an anchored composition camera.');
+}
 if (!content['scenes/nighthawks/src/app.js'].includes("../../../src/app.js")) throw new Error('The Nighthawks route is not connected to the rebuilt scene runtime.');
-if (!content['scenes/rooms-by-the-sea/src/app.js'].includes("./fidelity.js") || !content['scenes/rooms-by-the-sea/src/app.js'].includes('../../../shared/safe-composition.js') || !content['scenes/rooms-by-the-sea/src/app.js'].includes('compositionPresets') || !content['scenes/rooms-by-the-sea/src/app.js'].includes('overviewPresets')) throw new Error('Rooms by the Sea does not load its fidelity rebuild, safe composition solver, and adaptive camera presets.');
-if (!content['scenes/last-supper/index.html'].includes('./src/rebuild-app.js') || !content['scenes/last-supper/index.html'].includes('./src/composition-fix.js') || !content['scenes/last-supper/src/rebuild-app.js'].includes("./fidelity.js") || !content['scenes/last-supper/src/rebuild-app.js'].includes('../../../shared/safe-composition.js') || !content['scenes/last-supper/src/rebuild-app.js'].includes('compositionPresets') || !content['scenes/last-supper/src/rebuild-app.js'].includes('overviewPresets')) throw new Error('The Last Supper does not use its fidelity runtime, composition correction, safe solver, and adaptive camera presets.');
-if (!content['scenes/the-subway/index.html'].includes('./src/rebuild-app.js') || !content['scenes/the-subway/index.html'].includes('./src/composition-fix.js') || !content['scenes/the-subway/src/rebuild-app.js'].includes("./fidelity.js") || !content['scenes/the-subway/src/rebuild-app.js'].includes('../../../shared/safe-composition.js') || !content['scenes/the-subway/src/rebuild-app.js'].includes('compositionPresets') || !content['scenes/the-subway/src/rebuild-app.js'].includes('overviewPresets')) throw new Error('The Subway does not use its fidelity runtime, composition correction, safe solver, and adaptive camera presets.');
+if (!content['scenes/rooms-by-the-sea/src/app.js'].includes("./fidelity.js") || !content['scenes/rooms-by-the-sea/src/app.js'].includes('../../../shared/safe-composition.js') || !content['scenes/rooms-by-the-sea/src/app.js'].includes('allowRelocation: false') || !content['scenes/rooms-by-the-sea/src/app.js'].includes('compositionPresets') || !content['scenes/rooms-by-the-sea/src/app.js'].includes('overviewPresets')) {
+  throw new Error('Rooms by the Sea does not load its fidelity rebuild and anchored camera presets.');
+}
+if (!content['scenes/last-supper/index.html'].includes('./src/rebuild-app.js') || !content['scenes/last-supper/index.html'].includes('./src/fidelity-details.js') || !content['scenes/last-supper/index.html'].includes('./src/composition-fix.js') || !content['scenes/last-supper/src/rebuild-app.js'].includes("./fidelity.js") || !content['scenes/last-supper/src/rebuild-app.js'].includes('../../../shared/safe-composition.js') || !content['scenes/last-supper/src/rebuild-app.js'].includes('allowRelocation: false') || !content['scenes/last-supper/src/rebuild-app.js'].includes('compositionPresets') || !content['scenes/last-supper/src/rebuild-app.js'].includes('overviewPresets')) {
+  throw new Error('The Last Supper does not use its detail layer, composition correction, and anchored camera presets.');
+}
+if (!content['scenes/the-subway/index.html'].includes('./src/rebuild-app.js') || !content['scenes/the-subway/index.html'].includes('./src/fidelity-details.js') || !content['scenes/the-subway/index.html'].includes('./src/composition-fix.js') || !content['scenes/the-subway/src/rebuild-app.js'].includes("./fidelity.js") || !content['scenes/the-subway/src/rebuild-app.js'].includes('../../../shared/safe-composition.js') || !content['scenes/the-subway/src/rebuild-app.js'].includes('allowRelocation:false') || !content['scenes/the-subway/src/rebuild-app.js'].includes('compositionPresets') || !content['scenes/the-subway/src/rebuild-app.js'].includes('overviewPresets')) {
+  throw new Error('The Subway does not use its connected entry concourse and anchored camera presets.');
+}
 
 for (const path of requiredScenes.values()) {
   if (!content['index.html'].includes(`./${path}`)) throw new Error(`The gallery fallback must link to ${path}.`);
@@ -142,6 +165,6 @@ for (const token of ['海边的房间', 'rooms-by-the-sea', '最后的晚餐', '
 }
 
 const total = (await Promise.all(files.map(async (path) => (await stat(new URL(path, root))).size))).reduce((a, b) => a + b, 0);
-if (total < 650000) throw new Error(`Site source is unexpectedly small: ${total} bytes.`);
+if (total < 690000) throw new Error(`Site source is unexpectedly small: ${total} bytes.`);
 
-console.log(`Validated ${files.length} files, ${manifest.scenes.length} scenes, ${requiredMarkers.length} fidelity, camera, and visibility markers, and ${total} bytes.`);
+console.log(`Validated ${files.length} files, ${manifest.scenes.length} scenes, ${requiredMarkers.length} anchored-camera and fidelity markers, and ${total} bytes.`);

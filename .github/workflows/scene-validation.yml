@@ -44,7 +44,7 @@ jobs:
           cat /tmp/painted-worlds-server.log
           exit 1
 
-      - name: Exercise composition return in every scene
+      - name: Verify initial anchored composition in every scene
         run: |
           set -uo pipefail
           chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
@@ -65,7 +65,7 @@ jobs:
               --ignore-gpu-blocklist \
               --force-prefers-reduced-motion \
               --virtual-time-budget=26000 \
-              --dump-dom "http://127.0.0.1:4173/scenes/${slug}/?ci=1&verifyComposition=1" \
+              --dump-dom "http://127.0.0.1:4173/scenes/${slug}/?ci=1" \
               > "$output" 2> "$errors"; then
               echo "${slug}: Chrome failed"
               failed=1
@@ -73,7 +73,9 @@ jobs:
             fi
             grep -q '<canvas' "$output" || { echo "${slug}: no WebGL canvas"; failed=1; }
             grep -q 'class="loading done"' "$output" || { echo "${slug}: loading did not finish"; failed=1; }
-            grep -q 'data-composition-ready="true"' "$output" || { echo "${slug}: composition return did not finish"; failed=1; }
+            grep -q 'data-composition-ready="true"' "$output" || { echo "${slug}: initial composition is not ready"; failed=1; }
+            grep -q 'data-composition-strategy="anchored"' "$output" || { echo "${slug}: composition is not anchored"; failed=1; }
+            grep -q 'data-composition-adjusted="0"' "$output" || { echo "${slug}: composition was unexpectedly relocated"; failed=1; }
             if grep -q 'class="loading failed"' "$output"; then echo "${slug}: runtime entered failure state"; failed=1; fi
           }
           verify_scene nighthawks
@@ -81,6 +83,21 @@ jobs:
           verify_scene last-supper
           verify_scene the-subway
           exit "$failed"
+
+      - name: Verify stationary touch and real composition return
+        run: |
+          set -euo pipefail
+          chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
+          node scripts/mobile-tap-stability.mjs "$chrome"
+
+      - name: Upload interaction evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-interaction-stability
+          path: /tmp/tap-stability/*
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload composition diagnostics
         if: always()
@@ -94,7 +111,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
-      - name: Capture post-click desktop and mobile composition screenshots
+      - name: Capture desktop and mobile composition screenshots
         run: |
           set -euo pipefail
           mkdir -p /tmp/scene-screenshots/desktop /tmp/scene-screenshots/mobile
@@ -117,7 +134,7 @@ jobs:
               --window-size="$viewport" \
               --virtual-time-budget=26000 \
               --screenshot="$output" \
-              "http://127.0.0.1:4173/scenes/${slug}/?screenshot=1&verifyComposition=1"
+              "http://127.0.0.1:4173/scenes/${slug}/?screenshot=1"
             test -s "$output"
           }
           for slug in nighthawks rooms-by-the-sea last-supper the-subway; do
