@@ -1,0 +1,93 @@
+name: Post-merge fidelity live check
+
+on:
+  push:
+    paths:
+      - '.github/workflows/post-merge-fidelity-check.yml'
+
+permissions:
+  contents: write
+  pages: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Pages and all four live scenes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          base_url="https://dreaminmaster.github.io/-github-achievement-lab/"
+          api_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/pages"
+          for attempt in $(seq 1 30); do
+            api_code=$(curl --silent --show-error --output /tmp/pages.json --write-out "%{http_code}" \
+              --header "Accept: application/vnd.github+json" \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header "X-GitHub-Api-Version: 2022-11-28" "$api_url")
+            pages_status=$(jq -r '.status // "unknown"' /tmp/pages.json 2>/dev/null)
+            root_code=$(curl --silent --show-error --location --output /tmp/root.html --write-out "%{http_code}" "${base_url}?live=${GITHUB_SHA}-${attempt}")
+            orientation_code=$(curl --silent --show-error --location --output /tmp/orientation.js --write-out "%{http_code}" "${base_url}src/fidelity-orientation.js?live=${GITHUB_SHA}-${attempt}")
+            rooms_code=$(curl --silent --show-error --location --output /tmp/rooms.js --write-out "%{http_code}" "${base_url}scenes/rooms-by-the-sea/src/fidelity.js?live=${GITHUB_SHA}-${attempt}")
+            supper_code=$(curl --silent --show-error --location --output /tmp/supper.js --write-out "%{http_code}" "${base_url}scenes/last-supper/src/fidelity.js?live=${GITHUB_SHA}-${attempt}")
+            subway_code=$(curl --silent --show-error --location --output /tmp/subway.js --write-out "%{http_code}" "${base_url}scenes/the-subway/src/fidelity.js?live=${GITHUB_SHA}-${attempt}")
+            if [ "$pages_status" = "built" ] && [ "$root_code" = "200" ] && [ "$orientation_code" = "200" ] && [ "$rooms_code" = "200" ] && [ "$supper_code" = "200" ] && [ "$subway_code" = "200" ]; then break; fi
+            sleep 10
+          done
+
+          chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)
+          verify_scene() {
+            slug="$1"
+            source_code=$(curl --silent --show-error --location --output "/tmp/${slug}.source" --write-out "%{http_code}" "${base_url}scenes/${slug}/?live=${GITHUB_SHA}")
+            chrome_exit=999
+            canvas_count=0
+            done_count=0
+            failed_count=0
+            if [ -n "$chrome" ]; then
+              timeout 75s "$chrome" \
+                --headless=new --no-sandbox --disable-dev-shm-usage \
+                --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader \
+                --enable-webgl --ignore-gpu-blocklist --virtual-time-budget=26000 \
+                --dump-dom "${base_url}scenes/${slug}/?live=${GITHUB_SHA}" \
+                > "/tmp/${slug}.html" 2> "/tmp/${slug}.errors"
+              chrome_exit=$?
+              canvas_count=$(grep -o '<canvas' "/tmp/${slug}.html" 2>/dev/null | wc -l | tr -d ' ')
+              done_count=$(grep -o 'class="loading done"' "/tmp/${slug}.html" 2>/dev/null | wc -l | tr -d ' ')
+              failed_count=$(grep -o 'class="loading failed"' "/tmp/${slug}.html" 2>/dev/null | wc -l | tr -d ' ')
+            fi
+            echo "${slug}_http=${source_code}"
+            echo "${slug}_chrome_exit=${chrome_exit}"
+            echo "${slug}_canvas=${canvas_count}"
+            echo "${slug}_loading_done=${done_count}"
+            echo "${slug}_loading_failed=${failed_count}"
+          }
+
+          {
+            echo "checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "workflow_commit=${GITHUB_SHA}"
+            echo "pages_api_http=${api_code}"
+            echo "pages_status=${pages_status}"
+            echo "root_http=${root_code}"
+            echo "nighthawks_orientation_asset=${orientation_code}"
+            echo "rooms_fidelity_asset=${rooms_code}"
+            echo "last_supper_fidelity_asset=${supper_code}"
+            echo "subway_fidelity_asset=${subway_code}"
+            verify_scene nighthawks
+            verify_scene rooms-by-the-sea
+            verify_scene last-supper
+            verify_scene the-subway
+            echo "pages_response="
+            cat /tmp/pages.json 2>/dev/null || true
+          } > fidelity-live-result.txt
+          exit 0
+
+      - name: Commit live verification result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add fidelity-live-result.txt
+          git commit -m "Record fidelity rebuild live verification" || exit 0
+          git push
