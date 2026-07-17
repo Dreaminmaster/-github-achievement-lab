@@ -9,6 +9,7 @@ const files = [
   'scenes/README.md',
   'scenes/manifest.json',
   'shared/scene-selector.js',
+  'shared/safe-composition.js',
   '.github/workflows/scene-validation.yml',
   'scenes/nighthawks/index.html',
   'scenes/nighthawks/styles.css',
@@ -49,9 +50,7 @@ for (const path of files) {
 }
 
 const manifest = JSON.parse(content['scenes/manifest.json']);
-if (!Array.isArray(manifest.scenes) || manifest.scenes.length < 4) {
-  throw new Error('scenes/manifest.json must contain all four available scenes.');
-}
+if (!Array.isArray(manifest.scenes) || manifest.scenes.length < 4) throw new Error('scenes/manifest.json must contain all four available scenes.');
 
 const requiredScenes = new Map([
   ['nighthawks', 'scenes/nighthawks/'],
@@ -60,15 +59,11 @@ const requiredScenes = new Map([
   ['the-subway', 'scenes/the-subway/']
 ]);
 for (const scene of manifest.scenes) {
-  if (!scene.id || !scene.titleZh || !scene.titleEn || !scene.path || !scene.description) {
-    throw new Error(`Scene manifest entry is incomplete: ${JSON.stringify(scene)}`);
-  }
+  if (!scene.id || !scene.titleZh || !scene.titleEn || !scene.path || !scene.description) throw new Error(`Scene manifest entry is incomplete: ${JSON.stringify(scene)}`);
 }
 for (const [id, path] of requiredScenes) {
   const scene = manifest.scenes.find((entry) => entry.id === id);
-  if (!scene || scene.path !== path || scene.status !== 'available') {
-    throw new Error(`Scene ${id} must be available at ${path}.`);
-  }
+  if (!scene || scene.path !== path || scene.status !== 'available') throw new Error(`Scene ${id} must be available at ${path}.`);
 }
 
 const joined = Object.values(content).join('\n');
@@ -109,7 +104,11 @@ const requiredMarkers = [
   'zoomToCursor',
   'glassSpillFront',
   'glassSpillCorner',
-  'Capture desktop and mobile composition screenshots',
+  'createSafeComposition',
+  'compositionReady',
+  'verifyComposition',
+  'Exercise composition return in every scene',
+  'Capture post-click desktop and mobile composition screenshots',
   '390,844',
   'loading-error-message'
 ];
@@ -119,28 +118,11 @@ if (missing.length) throw new Error(`Missing required markers: ${missing.join(',
 for (const dependency of ['./core.js', './environment.js', './characters.js', './fidelity.js', './runtime.js', './fidelity-orientation.js']) {
   if (!content['src/app.js'].includes(dependency)) throw new Error(`src/app.js does not import ${dependency}`);
 }
-if (!content['scenes/nighthawks/src/app.js'].includes("../../../src/app.js")) {
-  throw new Error('The Nighthawks route is not connected to the rebuilt scene runtime.');
-}
-if (!content['scenes/rooms-by-the-sea/src/app.js'].includes("./fidelity.js") ||
-    !content['scenes/rooms-by-the-sea/src/app.js'].includes('compositionPresets') ||
-    !content['scenes/rooms-by-the-sea/src/app.js'].includes('overviewPresets')) {
-  throw new Error('Rooms by the Sea does not load its fidelity rebuild and adaptive camera presets.');
-}
-if (!content['scenes/last-supper/index.html'].includes('./src/rebuild-app.js') ||
-    !content['scenes/last-supper/index.html'].includes('./src/composition-fix.js') ||
-    !content['scenes/last-supper/src/rebuild-app.js'].includes("./fidelity.js") ||
-    !content['scenes/last-supper/src/rebuild-app.js'].includes('compositionPresets') ||
-    !content['scenes/last-supper/src/rebuild-app.js'].includes('overviewPresets')) {
-  throw new Error('The Last Supper does not use its fidelity runtime, composition correction, and adaptive camera presets.');
-}
-if (!content['scenes/the-subway/index.html'].includes('./src/rebuild-app.js') ||
-    !content['scenes/the-subway/index.html'].includes('./src/composition-fix.js') ||
-    !content['scenes/the-subway/src/rebuild-app.js'].includes("./fidelity.js") ||
-    !content['scenes/the-subway/src/rebuild-app.js'].includes('compositionPresets') ||
-    !content['scenes/the-subway/src/rebuild-app.js'].includes('overviewPresets')) {
-  throw new Error('The Subway does not use its fidelity runtime, composition correction, and adaptive camera presets.');
-}
+if (!content['src/runtime.js'].includes("../shared/safe-composition.js")) throw new Error('Nighthawks runtime does not use the safe composition solver.');
+if (!content['scenes/nighthawks/src/app.js'].includes("../../../src/app.js")) throw new Error('The Nighthawks route is not connected to the rebuilt scene runtime.');
+if (!content['scenes/rooms-by-the-sea/src/app.js'].includes("./fidelity.js") || !content['scenes/rooms-by-the-sea/src/app.js'].includes('../../../shared/safe-composition.js') || !content['scenes/rooms-by-the-sea/src/app.js'].includes('compositionPresets') || !content['scenes/rooms-by-the-sea/src/app.js'].includes('overviewPresets')) throw new Error('Rooms by the Sea does not load its fidelity rebuild, safe composition solver, and adaptive camera presets.');
+if (!content['scenes/last-supper/index.html'].includes('./src/rebuild-app.js') || !content['scenes/last-supper/index.html'].includes('./src/composition-fix.js') || !content['scenes/last-supper/src/rebuild-app.js'].includes("./fidelity.js") || !content['scenes/last-supper/src/rebuild-app.js'].includes('../../../shared/safe-composition.js') || !content['scenes/last-supper/src/rebuild-app.js'].includes('compositionPresets') || !content['scenes/last-supper/src/rebuild-app.js'].includes('overviewPresets')) throw new Error('The Last Supper does not use its fidelity runtime, composition correction, safe solver, and adaptive camera presets.');
+if (!content['scenes/the-subway/index.html'].includes('./src/rebuild-app.js') || !content['scenes/the-subway/index.html'].includes('./src/composition-fix.js') || !content['scenes/the-subway/src/rebuild-app.js'].includes("./fidelity.js") || !content['scenes/the-subway/src/rebuild-app.js'].includes('../../../shared/safe-composition.js') || !content['scenes/the-subway/src/rebuild-app.js'].includes('compositionPresets') || !content['scenes/the-subway/src/rebuild-app.js'].includes('overviewPresets')) throw new Error('The Subway does not use its fidelity runtime, composition correction, safe solver, and adaptive camera presets.');
 
 for (const path of requiredScenes.values()) {
   if (!content['index.html'].includes(`./${path}`)) throw new Error(`The gallery fallback must link to ${path}.`);
@@ -151,9 +133,7 @@ for (const [path, current] of [
   ['scenes/last-supper/index.html', 'current="last-supper"'],
   ['scenes/the-subway/index.html', 'current="the-subway"']
 ]) {
-  if (!content[path].includes(current) || !content[path].includes('manifest="../manifest.json"')) {
-    throw new Error(`${path} is missing the shared scene selector connection.`);
-  }
+  if (!content[path].includes(current) || !content[path].includes('manifest="../manifest.json"')) throw new Error(`${path} is missing the shared scene selector connection.`);
   if (content[path].includes('cdn.jsdelivr.net')) throw new Error(`${path} must not depend on a runtime CDN.`);
 }
 
@@ -164,4 +144,4 @@ for (const token of ['海边的房间', 'rooms-by-the-sea', '最后的晚餐', '
 const total = (await Promise.all(files.map(async (path) => (await stat(new URL(path, root))).size))).reduce((a, b) => a + b, 0);
 if (total < 650000) throw new Error(`Site source is unexpectedly small: ${total} bytes.`);
 
-console.log(`Validated ${files.length} files, ${manifest.scenes.length} scenes, ${requiredMarkers.length} fidelity and camera markers, and ${total} bytes.`);
+console.log(`Validated ${files.length} files, ${manifest.scenes.length} scenes, ${requiredMarkers.length} fidelity, camera, and visibility markers, and ${total} bytes.`);
