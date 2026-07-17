@@ -36,13 +36,13 @@ const dust = new THREE.Points(dustGeometry, dustMaterial); diner.add(dust);
 
 const compositionPresets = {
   wide: { position: [-4.8, 5.15, -15.8], target: [3.1, 2.22, 4.25], fov: 38 },
-  square: { position: [-6.05, 5.7, -18.9], target: [3.1, 2.22, 4.25], fov: 44 },
-  portrait: { position: [-7.35, 6.15, -21.9], target: [3.1, 2.22, 4.25], fov: 52 }
+  square: { position: [-6.05, 5.1, -19.2], target: [3.8, 2.18, 4.35], fov: 56 },
+  portrait: { position: [-7.0, 5.0, -22.4], target: [4.1, 2.15, 4.4], fov: 70 }
 };
 const overviewPresets = {
   wide: { position: [-12.2, 8.0, -22.0], target: [3.1, 2.0, 4.4], fov: 44 },
   square: { position: [-13.6, 9.0, -24.0], target: [3.1, 2.0, 4.4], fov: 50 },
-  portrait: { position: [-14.8, 9.8, -25.5], target: [3.1, 2.0, 4.4], fov: 56 }
+  portrait: { position: [-14.8, 9.8, -25.5], target: [3.1, 2.0, 4.4], fov: 62 }
 };
 function viewportMode() { const aspect = innerWidth / innerHeight; return aspect < .72 ? 'portrait' : aspect < 1.18 ? 'square' : 'wide'; }
 function presetFor(collection) { return collection[viewportMode()]; }
