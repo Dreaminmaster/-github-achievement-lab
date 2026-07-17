@@ -76,13 +76,15 @@ jobs:
           verify_scene last-supper
           verify_scene the-subway
 
-      - name: Capture composition screenshots
+      - name: Capture desktop and mobile composition screenshots
         run: |
           set -euo pipefail
-          mkdir -p /tmp/scene-screenshots
+          mkdir -p /tmp/scene-screenshots/desktop /tmp/scene-screenshots/mobile
           chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
           capture_scene() {
             slug="$1"
+            viewport="$2"
+            output="$3"
             timeout 70s "$chrome" \
               --headless=new \
               --no-sandbox \
@@ -93,22 +95,22 @@ jobs:
               --enable-webgl \
               --ignore-gpu-blocklist \
               --hide-scrollbars \
-              --window-size=1440,900 \
+              --window-size="$viewport" \
               --virtual-time-budget=24000 \
-              --screenshot="/tmp/scene-screenshots/${slug}.png" \
+              --screenshot="$output" \
               "http://127.0.0.1:4173/scenes/${slug}/?screenshot=1"
-            test -s "/tmp/scene-screenshots/${slug}.png"
+            test -s "$output"
           }
-          capture_scene nighthawks
-          capture_scene rooms-by-the-sea
-          capture_scene last-supper
-          capture_scene the-subway
+          for slug in nighthawks rooms-by-the-sea last-supper the-subway; do
+            capture_scene "$slug" 1440,900 "/tmp/scene-screenshots/desktop/${slug}.png"
+            capture_scene "$slug" 390,844 "/tmp/scene-screenshots/mobile/${slug}.png"
+          done
 
       - name: Upload scene screenshots
         uses: actions/upload-artifact@v4
         with:
           name: scene-composition-screenshots
-          path: /tmp/scene-screenshots/*.png
+          path: /tmp/scene-screenshots/**/*.png
           if-no-files-found: error
           retention-days: 7
 
