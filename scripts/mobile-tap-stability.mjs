@@ -82,7 +82,7 @@ async function evaluate(cdp, expression) {
   return result.result?.value;
 }
 
-async function waitFor(cdp, expression, label, attempts = 120) {
+async function waitFor(cdp, expression, label, attempts = 160) {
   for (let i = 0; i < attempts; i++) {
     if (await evaluate(cdp, expression)) return;
     await sleep(100);
@@ -113,7 +113,7 @@ try {
     await cdp.send('Page.navigate', { url });
     await waitFor(cdp, `document.readyState === 'complete'`, `${slug} document`);
     await waitFor(cdp, `document.querySelector('#loading')?.classList.contains('done')`, `${slug} loading`);
-    await waitFor(cdp, `document.documentElement.dataset.compositionReady === 'true'`, `${slug} composition`);
+    await waitFor(cdp, `document.documentElement.dataset.compositionReady === 'true'`, `${slug} initial composition`);
 
     const stateBefore = await evaluate(cdp, `(() => {
       const canvas = document.querySelector('canvas');
@@ -145,7 +145,24 @@ try {
 
     if (stateAfter.ready !== 'true') throw new Error(`${slug}: a stationary touch exited composition mode`);
     if (!before.equals(after)) throw new Error(`${slug}: canvas changed after a stationary touch; see tap-stability artifact`);
-    console.log(`${slug}: stationary mobile touch preserved the composition`);
+
+    // Exercise the exact controls used by the user instead of relying on a timed DOM dump.
+    await evaluate(cdp, `document.querySelector('#explore').click()`);
+    await sleep(350);
+    await evaluate(cdp, `document.querySelector('#composition').click()`);
+    await waitFor(cdp, `document.documentElement.dataset.compositionReady === 'true'`, `${slug} returned composition`);
+    await sleep(120);
+    const returned = await capture(cdp, `${outputDir}/${slug}-returned.png`, clip);
+    const returnedState = await evaluate(cdp, `({
+      strategy: document.documentElement.dataset.compositionStrategy,
+      adjusted: document.documentElement.dataset.compositionAdjusted,
+      ready: document.documentElement.dataset.compositionReady
+    })`);
+    if (returnedState.strategy !== 'anchored' || returnedState.adjusted !== '0' || returnedState.ready !== 'true') {
+      throw new Error(`${slug}: returned composition is not anchored (${JSON.stringify(returnedState)})`);
+    }
+    if (!before.equals(returned)) throw new Error(`${slug}: returning from exploration did not reproduce the initial composition`);
+    console.log(`${slug}: stationary touch and explore-to-composition return are stable`);
   }
 
   cdp.close();
