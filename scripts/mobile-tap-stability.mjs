@@ -97,6 +97,10 @@ async function capture(cdp, file, clip) {
   return bytes;
 }
 
+async function saveState(slug, phase, value) {
+  await writeFile(`${outputDir}/${slug}-${phase}.json`, JSON.stringify(value, null, 2));
+}
+
 try {
   await waitForJson(`http://127.0.0.1:${port}/json/version`);
   const target = await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: 'PUT' }).then((response) => response.json());
@@ -125,9 +129,11 @@ try {
         height: Math.min(330, Math.max(180, rect.bottom - Math.max(rect.top + 240, 245) - 150)),
         ready: document.documentElement.dataset.compositionReady,
         strategy: document.documentElement.dataset.compositionStrategy,
-        adjusted: document.documentElement.dataset.compositionAdjusted
+        adjusted: document.documentElement.dataset.compositionAdjusted,
+        reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches
       };
     })()`);
+    await saveState(slug, 'initial', stateBefore);
     if (stateBefore.strategy !== 'anchored' || stateBefore.adjusted !== '0') {
       throw new Error(`${slug}: composition is not using an exact anchored camera (${JSON.stringify(stateBefore)})`);
     }
@@ -142,22 +148,33 @@ try {
     await sleep(500);
     const after = await capture(cdp, `${outputDir}/${slug}-after.png`, clip);
     const stateAfter = await evaluate(cdp, `({ ready: document.documentElement.dataset.compositionReady, strategy: document.documentElement.dataset.compositionStrategy })`);
+    await saveState(slug, 'after-touch', stateAfter);
 
     if (stateAfter.ready !== 'true') throw new Error(`${slug}: a stationary touch exited composition mode`);
-    if (!before.equals(after)) throw new Error(`${slug}: canvas changed after a stationary touch; see tap-stability artifact`);
+    if (!before.equals(after)) throw new Error(`${slug}: canvas changed after a stationary touch; see interaction artifact`);
 
-    // Exercise the exact controls used by the user instead of relying on a timed DOM dump.
     await evaluate(cdp, `document.querySelector('#explore').click()`);
-    await sleep(350);
+    await sleep(500);
+    const exploredState = await evaluate(cdp, `({
+      ready: document.documentElement.dataset.compositionReady,
+      strategy: document.documentElement.dataset.compositionStrategy,
+      explorePressed: document.querySelector('#explore').getAttribute('aria-pressed'),
+      compositionPrimary: document.querySelector('#composition').classList.contains('primary')
+    })`);
+    await saveState(slug, 'explored', exploredState);
+
     await evaluate(cdp, `document.querySelector('#composition').click()`);
-    await waitFor(cdp, `document.documentElement.dataset.compositionReady === 'true'`, `${slug} returned composition`);
-    await sleep(120);
-    const returned = await capture(cdp, `${outputDir}/${slug}-returned.png`, clip);
+    await sleep(900);
     const returnedState = await evaluate(cdp, `({
       strategy: document.documentElement.dataset.compositionStrategy,
       adjusted: document.documentElement.dataset.compositionAdjusted,
-      ready: document.documentElement.dataset.compositionReady
+      ready: document.documentElement.dataset.compositionReady,
+      explorePressed: document.querySelector('#explore').getAttribute('aria-pressed'),
+      compositionPrimary: document.querySelector('#composition').classList.contains('primary')
     })`);
+    await saveState(slug, 'returned', returnedState);
+    const returned = await capture(cdp, `${outputDir}/${slug}-returned.png`, clip);
+
     if (returnedState.strategy !== 'anchored' || returnedState.adjusted !== '0' || returnedState.ready !== 'true') {
       throw new Error(`${slug}: returned composition is not anchored (${JSON.stringify(returnedState)})`);
     }
