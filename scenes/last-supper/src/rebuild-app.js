@@ -67,8 +67,8 @@ const tableFill = new THREE.PointLight(0xffc98e,1.12,26,1.8); tableFill.position
 
 const compositionPresets = {
   wide: { position: [0,5.05,15.6], target: [0,3.05,-3.65], fov: 39 },
-  square: { position: [0,5.12,15.9], target: [0,3.1,-3.75], fov: 54 },
-  portrait: { position: [0,5.2,16.2], target: [0,3.15,-3.85], fov: 68 }
+  square: { position: [0,4.65,15.9], target: [0,3.45,-3.75], fov: 62 },
+  portrait: { position: [0,4.35,16.2], target: [0,3.55,-3.85], fov: 82 }
 };
 const overviewPresets = {
   wide: { position: [14.5,9.4,21.0], target: [0,3.2,-4.4], fov: 42 },
