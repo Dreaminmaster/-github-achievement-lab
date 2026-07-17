@@ -1,8 +1,19 @@
-export function createSafeComposition({ THREE, root, targetTolerance = 1.05 }) {
+export function createSafeComposition({
+  THREE,
+  root,
+  targetTolerance = 1.05,
+  allowRelocation = true,
+  explicitCutaway = []
+}) {
   const raycaster = new THREE.Raycaster();
   const worldBox = new THREE.Box3();
   const size = new THREE.Vector3();
   const hidden = new Map();
+
+  function cutawayObjects() {
+    const value = typeof explicitCutaway === 'function' ? explicitCutaway() : explicitCutaway;
+    return Array.isArray(value) ? value.filter(Boolean) : [];
+  }
 
   function isOpaqueMaterial(material) {
     if (!material) return false;
@@ -47,6 +58,10 @@ export function createSafeComposition({ THREE, root, targetTolerance = 1.05 }) {
     object.visible = false;
   }
 
+  function applyExplicitCutaway() {
+    for (const object of cutawayObjects()) temporarilyHide(object);
+  }
+
   function obstruction(position, target, blockers) {
     for (const blocker of blockers) {
       worldBox.setFromObject(blocker).expandByScalar(.035);
@@ -84,16 +99,26 @@ export function createSafeComposition({ THREE, root, targetTolerance = 1.05 }) {
 
   function resolve(preset) {
     restore();
+    applyExplicitCutaway();
+
+    if (!allowRelocation) {
+      document.documentElement.dataset.compositionAdjusted = '0';
+      document.documentElement.dataset.compositionCutaway = String(hidden.size);
+      document.documentElement.dataset.compositionStrategy = 'anchored';
+      return { ...preset, position: [...preset.position], target: [...preset.target], safetyAdjusted: false, cutawayCount: hidden.size };
+    }
+
     const base = new THREE.Vector3(...preset.position);
     const target = new THREE.Vector3(...preset.target);
-    let blockers = collectBlockers();
+    let blockers = collectBlockers().filter((object) => !hidden.has(object));
     const candidates = candidatePositions(base, target);
 
     for (let index = 0; index < candidates.length; index++) {
       if (!obstruction(candidates[index], target, blockers)) {
         document.documentElement.dataset.compositionAdjusted = index === 0 ? '0' : '1';
-        document.documentElement.dataset.compositionCutaway = '0';
-        return { ...preset, position: candidates[index].toArray(), safetyAdjusted: index !== 0, cutawayCount: 0 };
+        document.documentElement.dataset.compositionCutaway = String(hidden.size);
+        document.documentElement.dataset.compositionStrategy = index === 0 ? 'original' : 'relocated';
+        return { ...preset, position: candidates[index].toArray(), safetyAdjusted: index !== 0, cutawayCount: hidden.size };
       }
     }
 
@@ -107,6 +132,7 @@ export function createSafeComposition({ THREE, root, targetTolerance = 1.05 }) {
 
     document.documentElement.dataset.compositionAdjusted = '1';
     document.documentElement.dataset.compositionCutaway = String(hidden.size);
+    document.documentElement.dataset.compositionStrategy = 'fallback-cutaway';
     return { ...preset, position: position.toArray(), safetyAdjusted: true, cutawayCount: hidden.size };
   }
 
